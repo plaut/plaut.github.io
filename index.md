@@ -34,6 +34,9 @@ Your Pages site will use the layout and styles from the Jekyll theme you have se
 
 ### LaTex
 $$ \alpha_0 $$
+$ \alpha_0 $
+\$\$ \alpha_0 \$\$
+\$ \alpha_0 \$
 
 ### Support or Contact
 
