@@ -252,3 +252,20 @@ We could stitch the images together so that they don’t overlap and together cr
 ![](img/woodscape6.png)
 
 The stitched image almost looks natural, but there is a sudden change in the camera model at the invisible border between the two views. We cannot expect a CNN, which is translation invariant, to learn 3D bounding box predictions that depend on whether the object is in the left half of the image, the right half of the image, or on the border between them.
+
+## Cylindrical images to the rescue
+### The cylindrical projection
+A cylindrical image is the projection of a 3D scene onto the unit cylinder, much like a perspective image is the projection of the 3D scene onto a plane:
+![](img/cylindrical.png)
+
+In the cylindrical camera model, a 3D point is related to the homogeneous coordinates of the pixel it corresponds to by the following transformation:
+\$\$\\left[\\begin{matrix}u\\\\v\\\\1\\\\\\end{matrix}\\right]\\rho=\\left[\\begin{matrix}f_\\varphi&0&u_0\\\\0&f_Y&v_0\\\\0&0&1\\\\\\end{matrix}\\right]\\left[\\begin{matrix}\\rho\\varphi\\\\Y\\\\\\rho\\\\\\end{matrix}\\right],\$\$
+where
+\$\$\\begin{matrix}\\rho=\\sqrt{X^2+Z^2}\\\\\\varphi=atan2{\\left(X,Z\\right)}\\\\\\end{matrix}.\$\$
+We refer to \$\\rho\$ as the cylindrical radial distance and to \$\\varphi\$ as the azimuth angle.
+
+Compare the equation above to the perspective projection. Here too there is an intrinsic matrix which applies only scaling and translation. The difference is that here the intrinsic matrix multiplies a 3D point given in cylindrical coordinates rather than Cartesian coordinates.
+
+\$f_\\varphi\$ and \$f_Y\$ are related to the image size and field of view by
+\$\\begin{matrix}f_\\varphi=\sfrac{\\Phi}{W}\\\\f_Y=\\frac{H}{2\\tan{\\frac{\\Psi}{2}}}\\ \\\\\\end{matrix},\$
+where \$\\Phi\$ is the horizontal field of view and \$\\Psi\$ is the vertical field of view.
