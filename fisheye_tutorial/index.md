@@ -128,3 +128,29 @@ Now all 3D bounding box parameters are camera agnostic. We can train on one came
 All the above is only true if the images are undistorted, the orientation regressed is the allocentric orientation, and the (normalized) depth is along the optical axis. If the images are distorted, or the regressed orientation is the global orientation, or the depth regressed as the Euclidean distance, then the 3D bounding box parameters are no longer camera agnostic. Any difference in camera calibration (focal length, principal point, distortion coefficients) between training and testing will cause a degradation in 3D object detection performance.
 
 [CamConvs](https://openaccess.thecvf.com/content_CVPR_2019/html/Facil_CAM-Convs_Camera-Aware_Multi-Scale_Convolutions_for_Single-View_Depth_CVPR_2019_paper.html) proposed adding coordinate dependent channels to the CNN, but this cannot guarantee that the model becomes camera agnostic. It is better to set up the problem in a way that is translation invariant and ensure it is camera agnostic than to provide the CNN access to spatial coordinates and hope for the best.
+
+## Extrinsic rotation
+In autonomous driving, the optical axis of perspective cameras is always parallel to the ground. Even if we believe that the area closer to the ground is more interesting, or that traffic lights and traffic signs which are elevated above the ground are more interesting, we always keep the camera upright and never tilt it upwards or downwards.
+
+One of the advantages in keeping the camera upright is that objects in driving scenes tend to be upright, or parallel to the ground, i.e., they have zero pitch and zero roll. In pinhole cameras, straight horizontal lines in 3D correspond to straight horizontal lines in the image, and straight vertical lines in 3D correspond to straight vertical lines in the image.
+
+If the camera is rotated, many of the interesting objects in the scene, which are aligned to the ground, are no longer parallel to the image plane. See for example this picture taken in New York City:
+![](img/nyc_tilted.jpg)
+The optical axis is tilted slightly upwards, and as a result the buildings, which are perpendicular to the ground, appear to tilt towards the right when they are in the left half of the image and towards the left when they are in the right half of the image.
+
+This has several advantages: it does not fit well with the translation invariance property of CNNs, forcing a monocular 3D detector to implicitly learn the pixel coordinates, store the intrinsic calibration and the camera tilt in an uninterpretable way, and consequently does not generalize well to a camera with a different intrinsic calibration or a different tilt. In addition, cubes in 3D do not correspond to 2D rectangles aligned to the pixel grid, so the 2D bounding boxes around objects do not tightly enclose them.
+
+If the camera has a tilt and we cannot physically rotate it to be upright, we can apply a virtual rotation. We use the inverse perspective projection to compute a 3D ray for every pixel, then rotate the ray using the rotation from the tilted camera to an upright coordinate frame parallel to the ground. Then, we use the perspective projection to project the rotated rays to the new image plane. This gives a mapping between the camera pixels and a new image that simulates an upright viewing direction. The pixel mapping is given by
+\$\$p^{\\prime\\prime}=sKRK^{-1}p^\\prime,\$\$
+where \$p^{\\prime\\prime}\$ denotes the homogeneous pixel coordinates in the warped image simulating an upright view, \$p^\\prime\$ denotes the homogeneous coordinates in the image captured by the tilted camera, \$K\$ is the intrinsic matrix, \$R\$ is the matrix representing the rotation from the tilted camera to the upright coordinate frame parallel to the ground, and s is a scalar value set such that the third element of \$p^{\\prime\\prime}\$ is equal to 1.
+
+In practice, we compute the pixel mapping for the inverse transformation (from target to source), so that every pixel in the target image has some value (in the forward transformation, there is no guarantee that all pixels in the target image are mapped to).
+
+This is the same image from New York City after warping:
+![](img/nyc_corrected.jpg)
+In the upright view, objects are aligned to the ground plane and have zero pitch and zero roll, they are translation invariant, the 2D bounding boxes aligned to the pixel grid are tight, and 3D bounding box parameter predictions are independent of intrinsic or extrinsic calibration.
+
+The mapping between a 3D point in (tilted) camera coordinates P and the homogenous pixel coordinates in the warped image \${p\\prime}^\\prime\$ now includes an extrinsic rotation:
+\$\${p\\prime}^\\prime Z=KRP\$\$
+where \$R\$ is the rotation matrix from the physical (tilted) camera to the upright coordinate frame parallel to the ground.
+
