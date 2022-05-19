@@ -261,11 +261,11 @@ A cylindrical image is the projection of a 3D scene onto the unit cylinder, much
 In the cylindrical camera model, a 3D point is related to the homogeneous coordinates of the pixel it corresponds to by the following transformation:
 \$\$\\left[\\begin{matrix}u\\\\v\\\\1\\\\\\end{matrix}\\right]\\rho=\\left[\\begin{matrix}f_\\varphi&0&u_0\\\\0&f_Y&v_0\\\\0&0&1\\\\\\end{matrix}\\right]\\left[\\begin{matrix}\\rho\\varphi\\\\Y\\\\\\rho\\\\\\end{matrix}\\right],\$\$
 where
-\$\$\\begin{matrix}\\rho=\\sqrt{X^2+Z^2}\\\\\\varphi=atan2{\\left(X,Z\\right)}\\\\\\end{matrix}.\$\$
+\$\$\\begin{matrix}\\rho=\\sqrt{X^2+Z^2}\\\\\\varphi=\\text{atan2|{\\left(X,Z\\right)}\\\\\\end{matrix}.\$\$
 We refer to \$\\rho\$ as the cylindrical radial distance and to \$\\varphi\$ as the azimuth angle.
 
 Compare the equation above to the perspective projection. Here too there is an intrinsic matrix which applies only scaling and translation. The difference is that here the intrinsic matrix multiplies a 3D point given in cylindrical coordinates rather than Cartesian coordinates.
 
 \$f_\\varphi\$ and \$f_Y\$ are related to the image size and field of view by
-\$\$\\begin{matrix}f_\\varphi=\\frac{\\Phi}{W}\\\\f_Y=\\frac{H}{2\\tan{\\frac{\\Psi}{2}}}\\ \\\\\\end{matrix},\$\$
+\$\$\\begin{matrix}f_\\varphi=\\Phi/W\\\\f_Y=H/2\\tan{\\frac{\\Psi}{2}}\\ \\\\\\end{matrix}\$\$
 where \$\\Phi\$ is the horizontal field of view and \$\\Psi\$ is the vertical field of view.
