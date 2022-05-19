@@ -98,6 +98,7 @@ Furthermore, if it is possible for a CNN to predict the 3D size and overcome the
 
 The reason we train the CNN to predict \$Z\$ instead of training it to predict the Euclidean distance (and multiplying it by the directional vector normalized to unit \$L_2\$ norm) is that \$Z\$ is the geometrically meaningful measure of distance. Objects become smaller and larger depending on \$Z\$, regardless of horizontal and vertical translation. There is information in the image about \$Z\$, visual cues that a CNN can learn to extract. Here is a picture of seats in a stadium:
 ![](img/sport-auditorium-perspective.jpg)
+
 Notice how the seats appear smaller in the image as \$Z\$ increases, but seats in the same row, which have equal \$Z\$, all have the same size in the image regardless of their Euclidean distance from the camera.
 
 If we train a CNN to predict the Euclidean distance, we are forcing it to learn, in addition to the cues about \$Z\$, the horizontal and vertical coordinates. This is incompatible with the translation-invariant nature of CNNs.
@@ -136,6 +137,7 @@ One of the advantages in keeping the camera upright is that objects in driving s
 
 If the camera is rotated, many of the interesting objects in the scene, which are aligned to the ground, are no longer parallel to the image plane. See for example this picture taken in New York City:
 ![](img/nyc_tilted.jpg)
+
 The optical axis is tilted slightly upwards, and as a result the buildings, which are perpendicular to the ground, appear to tilt towards the right when they are in the left half of the image and towards the left when they are in the right half of the image.
 
 This has several advantages: it does not fit well with the translation invariance property of CNNs, forcing a monocular 3D detector to implicitly learn the pixel coordinates, store the intrinsic calibration and the camera tilt in an uninterpretable way, and consequently does not generalize well to a camera with a different intrinsic calibration or a different tilt. In addition, cubes in 3D do not correspond to 2D rectangles aligned to the pixel grid, so the 2D bounding boxes around objects do not tightly enclose them.
@@ -148,9 +150,24 @@ In practice, we compute the pixel mapping for the inverse transformation (from t
 
 This is the same image from New York City after warping:
 ![](img/nyc_corrected.jpg)
+
 In the upright view, objects are aligned to the ground plane and have zero pitch and zero roll, they are translation invariant, the 2D bounding boxes aligned to the pixel grid are tight, and 3D bounding box parameter predictions are independent of intrinsic or extrinsic calibration.
 
 The mapping between a 3D point in (tilted) camera coordinates P and the homogenous pixel coordinates in the warped image \${p\\prime}^\\prime\$ now includes an extrinsic rotation:
 \$\${p\\prime}^\\prime Z=KRP\$\$
 where \$R\$ is the rotation matrix from the physical (tilted) camera to the upright coordinate frame parallel to the ground.
 
+# Fisheye cameras
+## The Fisheye Projection
+Images from fisheye cameras look very different from images captured by perspective cameras. Here is an example of a fisheye image:
+![](img/The_Squirrels_0048.jpg)
+>Photo by Josh Berkow and Eric Berkow ([CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/deed.en))
+
+At first glance, this might remind us of what a perspective image with radial distortion looks like. Yet, no undistortion can warp this image to an image that obeys the pinhole camera model. In this image, the horizontal field of view is larger than \$180\\deg\$. It is impossible for a pinhole camera to capture objects that are behind the camera, i.e., at viewing angles larger than \$90\\deg\$ from the optical axis. The reason straight lines in 3D look curved in this image is because this image was created using an entirely different projection.
+
+There are various projections that are all referred to as *fisheye*, including equidistant, equisolid, stereographic, and orthographic. We shall use the equidistant fisheye camera model.
+
+A 3D point with a viewing angle \$\\theta=atan2{\\left(\\sqrt{X^2+Y^2}, Z\\right)}\$, also known the the *angle of incidence*, is projected onto the equidistant fisheye image at a distance from the principal point that is proportional to \$\\theta\$ (if you are not familiar with the *atan2* function, see its definition [here](https://en.wikipedia.org/wiki/Atan2)).
+
+Such images are able to capture objects at viewing angles of \$90\\deg\$ and beyond, and nothing special happens at \$90\\deg\$. Many fisheye cameras have a horizontal FoV of around \$190\\deg\$. The 3D to 2D projection is defined by
+\$\$\\left[\\begin{matrix}u\\\\v\\\\1\\\\\\end{matrix}\\right]Z=\\left[\\begin{matrix}f&0&u_0\\\\0&f&v_0\\\\0&0&1\\\\\\end{matrix}\\right]\\left[\\begin{matrix}\\frac{XZ}{\\sqrt{X^2+Y^2}}atan2{\\left(\\sqrt{X^2+Y^2},Z\\right)}\\\\\\frac{YZ}{\\sqrt{X^2+Y^2}}atan2{\\left(\\sqrt{X^2+Y^2},Z\\right)}\\\\Z\\\\\\end{matrix}\\right].\$\$
