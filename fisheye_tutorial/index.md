@@ -99,6 +99,7 @@ If the CNN can predict the 3D size of an object, we can use the magnification eq
 Furthermore, if it is possible for a CNN to predict the 3D size and overcome the ambiguity, it should also be possible for a CNN to directly regress \$Z\$ from the image, and many detectors do so (e.g., [CenterNet](https://arxiv.org/abs/1904.07850), [MonoDIS](https://openaccess.thecvf.com/content_ICCV_2019/html/Simonelli_Disentangling_Monocular_3D_Object_Detection_ICCV_2019_paper.html), [FCOS3D](https://openaccess.thecvf.com/content/ICCV2021W/3DODI/html/Wang_FCOS3D_Fully_Convolutional_One-Stage_Monocular_3D_Object_Detection_ICCVW_2021_paper.html)). Once we predict \$Z\$, we normalize the directional vector to \$Z=1\$ and then multiply by the predicted \$Z\$.
 
 The reason we train the CNN to predict \$Z\$ instead of training it to predict the Euclidean distance (and multiplying it by the directional vector normalized to unit \$L_2\$ norm) is that \$Z\$ is the geometrically meaningful measure of distance. Objects become smaller and larger depending on \$Z\$, regardless of horizontal and vertical translation. There is information in the image about \$Z\$, visual cues that a CNN can learn to extract. Here is a picture of seats in a stadium:
+
 ![](img/sport-auditorium-perspective.jpg)
 
 Notice how the seats appear smaller in the image as \$Z\$ increases, but seats in the same row, which have equal \$Z\$, all have the same size in the image regardless of their Euclidean distance from the camera.
@@ -138,6 +139,7 @@ In autonomous driving, the optical axis of perspective cameras is always paralle
 One of the advantages in keeping the camera upright is that objects in driving scenes tend to be upright, or parallel to the ground, i.e., they have zero pitch and zero roll. In pinhole cameras, straight horizontal lines in 3D correspond to straight horizontal lines in the image, and straight vertical lines in 3D correspond to straight vertical lines in the image.
 
 If the camera is rotated, many of the interesting objects in the scene, which are aligned to the ground, are no longer parallel to the image plane. See for example this picture taken in New York City:
+
 ![](img/nyc_tilted.jpg)
 
 The optical axis is tilted slightly upwards, and as a result the buildings, which are perpendicular to the ground, appear to tilt towards the right when they are in the left half of the image and towards the left when they are in the right half of the image.
@@ -151,6 +153,7 @@ where \$p^{\\prime\\prime}\$ denotes the homogeneous pixel coordinates in the wa
 In practice, we compute the pixel mapping for the inverse transformation (from target to source), so that every pixel in the target image has some value (in the forward transformation, there is no guarantee that all pixels in the target image are mapped to).
 
 This is the same image from New York City after warping:
+
 ![](img/nyc_corrected.jpg)
 
 In the upright view, objects are aligned to the ground plane and have zero pitch and zero roll, they are translation invariant, the 2D bounding boxes aligned to the pixel grid are tight, and 3D bounding box parameter predictions are independent of intrinsic or extrinsic calibration.
@@ -162,6 +165,7 @@ where \$R\$ is the rotation matrix from the physical (tilted) camera to the upri
 # Fisheye cameras
 ## The Fisheye Projection
 Images from fisheye cameras look very different from images captured by perspective cameras. Here is an example of a fisheye image:
+
 ![](img/The_Squirrels_0048.jpg)
 >Photo by Josh Berkow and Eric Berkow ([CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/deed.en))
 
@@ -200,6 +204,7 @@ In fisheye images, when an object moves to the left, right, up or down, it chang
 When we train a CNN to predict 2D bounding boxes from fisheye images, it must learn a wide variety of visual appearances of the same object. This is an unnecessarily difficult task. Yet, given a sufficiently large training set and a sufficiently large network, we can do so successfully. Another disadvantage of raw fisheye images is that the 2D bounding boxes aligned to the pixel grid are not tight. This has led [some authors](https://ml4ad.github.io/files/papers2020/FisheyeYOLO: Object Detection on Fisheye Cameras for Autonomous Driving.pdf) to propose representing objects in fisheye images as rotated rectangles, curved boxes, or polygons.
 
 Monocular 3D object detection from raw fisheye images is even more problematic. Let us look again at the fisheye image example:
+
 ![](img/The_Squirrels_0048.jpg)
 >Photo by Josh Berkow and Eric Berkow ([CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/deed.en))
 
@@ -215,9 +220,11 @@ One of the first instincts many engineers have is to try to rectify the fisheye 
 To warp a fisheye image to a perspective image, we can compute the inverse pixel mapping ourselves. We multiply the homogeneous coordinates of each pixel in the target perspective image by the inverse intrinsic matrix, which gives us a ray pointing in its direction. Then we project that ray onto the fisheye image using the fisheye camera model.
 
 Here is an example of warping a fisheye image from the [WoodScape dataset](https://openaccess.thecvf.com/content_ICCV_2019/papers/Yogamani_WoodScape_A_Multi-Task_Multi-Camera_Fisheye_Dataset_for_Autonomous_Driving_ICCV_2019_paper.pdf) to a perspective image:
+
 ![](img/woodscape1.png)
 
 Notice that the perspective image only captures part of the field of view. We created a perspective image with the same image size and intrinsic matrix as the fisheye camera. If we reduce the focal length of the warped image, we can simulate a zoom-out:
+
 ![](img/woodscape2.png)
 
 The field of view in the warped image is now larger, but still does not capture the full field of view of the fisheye image. No matter how small we make the focal length of the warped image, it will never capture viewing angles larger than \$90^\\circ\$. This begs the question: if we resort to limiting the field of view to one that is suitable for the perspective projection, why did we buy a fisheye camera in the first place? Why not use an actual perspective camera instead?
@@ -232,9 +239,11 @@ Fisheye cameras on vehicles are often installed tilted downwards towards the gro
 The tilt in the WoodScape sample above is evident in the warped image in that straight vertical lines in the 3D world appear to tilt towards the right when they are in the right half of the image and towards the left when they are in the left half of the image.
 
 When warping the fisheye image to a perspective image, we can simulate an upright pinhole camera whose optical axis is parallel to the ground instead of in the same direction as the optical axis of the physical fisheye camera:
+
 ![](img/woodscape3.png)
 
 Now vertical lines in the 3D world appear as vertical lines in the image, but a large part of the warped image is mapped from outside the field of view of the fisheye image, which is wasteful. We should change the principal point to account for the extrinsic rotation:
+
 ![](img/woodscape4.png)
 
 Now there are no empty pixels in the warped image, but a large part of the field of view is occupied by the road.
@@ -242,6 +251,7 @@ Now there are no empty pixels in the warped image, but a large part of the field
 ## Multiple rectifications
 After concluding that any perspective image is limited to only part of the fisheye camera’s FoV, and we can simulate rotations of the pinhole camera’s optical axis, one might ask: why not create multiple perspective images from a single fisheye camera, each covering a different part of the FoV?
 Here is the same WoodScape sample, but instead of an optical axis parallel to the ground and facing forward, we rotate it horizontally \$-45^\\circ\$ in the left image and \$+45^\\circ\$ in the right image:
+
 ![](img/woodscape5.png)
 
 We could input each perspective image separately into a CNN for processing. However, each perspective image only sees part of the FoV, and objects will often be truncated, i.e., only part of the object is visible, such as the red car in the left edge of the right image above. It is more difficult to detect an object that is only partly visible compared to an object that is fully visible. In monocular 3D detection, this degrades not only the recall but also the 3D bounding box parameter errors (position, orientation, dimensions).
@@ -249,6 +259,7 @@ We could input each perspective image separately into a CNN for processing. Howe
 In addition, an object that is visible in two different images is detected twice (once per image), and we must somehow associate the different detections and unify them to a single object prediction. This contradicts the motivation for using wide FoV cameras which could potentially process the entire FoV in a single image.
 
 We could stitch the images together so that they don’t overlap and together create a large image:
+
 ![](img/woodscape6.png)
 
 The stitched image almost looks natural, but there is a sudden change in the camera model at the invisible border between the two views. We cannot expect a CNN, which is translation invariant, to learn 3D bounding box predictions that depend on whether the object is in the left half of the image, the right half of the image, or on the border between them.
@@ -256,6 +267,7 @@ The stitched image almost looks natural, but there is a sudden change in the cam
 ## Cylindrical images to the rescue
 ### The cylindrical projection
 A cylindrical image is the projection of a 3D scene onto the unit cylinder, much like a perspective image is the projection of the 3D scene onto a plane:
+
 ![](img/cylindrical.png)
 
 In the cylindrical camera model, a 3D point is related to the homogeneous coordinates of the pixel it corresponds to by the following transformation:
@@ -269,3 +281,16 @@ Compare the equation above to the perspective projection. Here too there is an i
 \$f_\\varphi\$ and \$f_Y\$ are related to the image size and field of view by
 \$\$\\begin{matrix}f_\\varphi=\\Phi/W\\\\f_Y=H/2\\tan{\\frac{\\Psi}{2}}\\ \\\\\\end{matrix}\$\$
 where \$\\Phi\$ is the horizontal field of view and \$\\Psi\$ is the vertical field of view.
+
+### Fisheye to cylindrical warping
+Fisheye images can be warped to cylindrical images by computing the inverse pixel mapping. We start from pixel coordinates assumed to have come from the cylindrical image, and multiply the homogeneous coordinates of each pixel by the inverse cylindrical intrinsic matrix. This gives us the cylindrical coordinates of its corresponding ray (normalized to \$\\rho=1\$):
+\$\${\\left[\\begin{matrix}\\varphi\\\\Y\\\\1\\\\\\end{matrix}\\right]=\\left[\\begin{matrix}f_\\varphi&0&u_0\\\\0&f_Y&v_0\\\\0&0&1\\\\\\end{matrix}\\right]}^{-1}\\left[\\begin{matrix}u\\\\v\\\\1\\\\\\end{matrix}\\right].\$\$
+We convert the cylindrical coordinates to Cartesian coordinates:
+\$\$\\left[\\begin{matrix}X\\\\Y\\\\Z\\\\\\end{matrix}\\right]=\\left[\\begin{matrix}\\rho\\sin{\\varphi}\\\\Y\\\\\\rho\\cos{\\varphi}\\\\\\end{matrix}\\right]=\\left[\\begin{matrix}\\sin{\\varphi}\\\\Y\\\\\\cos{\\varphi}\\\\\\end{matrix}\\right].\$\$
+
+Then we project the ray onto the fisheye image using the fisheye projection with the camera’s focal length, principal point, and distortion coefficients. Once the fisheye image is warped to a cylindrical image, it becomes completely independent of the intrinsic parameters of the physical fisheye camera (focal length, principal point, distortion coefficients).
+
+Here is the WoodScape sample, which in a previous section we warped to a perspective image, now warped to a cylindrical image:
+
+![](img/woodscape8.png)
+
