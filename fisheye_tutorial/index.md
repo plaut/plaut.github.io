@@ -279,7 +279,7 @@ We refer to \$\\rho\$ as the cylindrical radial distance and to \$\\varphi\$ as 
 Compare the equation above to the perspective projection. Here too there is an intrinsic matrix which applies only scaling and translation. The difference is that here the intrinsic matrix multiplies a 3D point given in cylindrical coordinates rather than Cartesian coordinates.
 
 \$f_\\varphi\$ and \$f_Y\$ are related to the image size and field of view by
-\$\$\\begin{matrix}f_\\varphi=\\Phi/W\\\\f_Y=H/2\\tan{\\frac{\\Psi}{2}}\\ \\\\\\end{matrix}\$\$
+\$\$\\begin{matrix}f_\\varphi=\\Phi/W\\\\f_Y=\frac{1}{2}H/\\tan{\\frac{\\Psi}{2}}\\ \\\\\\end{matrix}\$\$
 where \$\\Phi\$ is the horizontal field of view and \$\\Psi\$ is the vertical field of view.
 
 ### Fisheye to cylindrical warping
@@ -294,3 +294,14 @@ Here is the WoodScape sample, which in a previous section we warped to a perspec
 
 ![](img/woodscape8.png)
 
+### Comparing cylindrical images to perspective images
+Warping a fisheye image to a cylindrical image does not cause the problems that arise when trying to warp a fisheye image to a perspective image. A cylindrical image is able to capture a field of view of over \$180^\\circ\$ (nothing special happens at a viewing angle of \$90^\\circ\$), there are no blurs or artifacts, and no drastic changes in the relative area occupied by objects in the image. In many ways, a fisheye image warped to a cylindrical image appears more like a natural perspective image than a fisheye image warped to a perspective image. A cylindrical image could theoretically be created by rotating a pinhole camera and capturing one column of pixels at a time. Straight vertical lines in 3D appear as straight vertical lines in the cylindrical image. The horizon appears as a straight horizontal line, but all horizontal lines other that the horizon behave differently.
+
+Straight horizontal lines in perspective images correspond to curved lines in cylindrical images and straight horizontal lines in cylindrical images correspond to curved lines in cylindrical images.
+
+Here is a perspective image of the Aqueduct of Segovia in Spain:
+
+![](img/Acueducto3_Lou.jpg)
+> Photo by Nicolás Pérez ([CC BY 3.0](https://creativecommons.org/licenses/by/3.0/))
+
+Its straight lines in 3D appear as straight lines in the perspective image. Now, here is a cylindrical image of the same Aqueduct of Segovia:
