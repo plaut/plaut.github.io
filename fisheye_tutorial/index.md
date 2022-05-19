@@ -305,3 +305,22 @@ Here is a perspective image of the Aqueduct of Segovia in Spain:
 > Photo by Nicolás Pérez ([CC BY 3.0](https://creativecommons.org/licenses/by/3.0/))
 
 Its straight lines in 3D appear as straight lines in the perspective image. Now, here is a cylindrical image of the same Aqueduct of Segovia:
+
+![](img/PanoAcueductoSegovia.jpg)
+> Photo by Mario Modesto ([CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/deed.en))
+
+To a human used to seeing perspective images, the aqueduct in the cylindrical image looks as if it were round in 3D.
+
+Here is a perspective image of the inside of the Colosseum in Rome:
+
+![](img/Panorama_Kolosseum_in_Rom_(komprimiert).jpg)
+> Photo by Sebastian Straub ([CC BY 3.0](https://creativecommons.org/licenses/by/3.0/))
+
+The Colosseum is round in 3D, and in the perspective image it indeed looks round.
+
+Here is a cylindrical image of the same Colosseum:
+
+![](img/Panorama_inside_Colosseum_2.jpg)
+> Photo by Jaakko Luttinen ([CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/deed.en))
+
+To a human used to seeing perspective images, in the cylindrical image the Colosseum looks as if it were straight, perhaps similar to the perspective image of the Aqueduct of Segovia.
