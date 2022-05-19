@@ -1,4 +1,6 @@
 # Tutorial on Computer Vision with Fisheye Cameras
+> Author: [Elad Plaut](https://www.linkedin.com/in/elad-plaut)
+
 # Introduction
 A fisheye camera is a camera whose field of view (FoV) is so large that the image it captures cannot be represented using the perspective projection. Instead of producing rectilinear images, fisheye cameras map straight lines in the 3D world to curved lines in the image according to some known mapping. Fisheye images appear deformed compared to standard perspective images, which we tend to regard as a natural view of the world. Nevertheless, the ability of a single camera to capture a wide FoV makes fisheye cameras extremely valuable in applications such as video surveillance, aerial photography, and autonomous vehicles.
 
