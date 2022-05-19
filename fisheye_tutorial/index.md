@@ -18,13 +18,13 @@ and the 2D coordinate of the pixel to which it is mapped,
 
 In the 3D coordinates we use, the \$x\$ axis is right, the \$y\$ axis is down, the \$z\$ axis is forward (also known as the optical axis), and the origin of axes is the camera’s focal point. In the image coordinates, \$u\$ is right and \$v\$ is down, the pixel indexes can be found by rounding to whole numbers, and the pixel \$\[0, 0\]\$ is the top left corner of the image.
 The pinhole camera model is a simple model that is used very often. In this model, the 3D coordinates of a point are related to the homogeneous coordinates of a pixel,
-\$\$p^\prime=\left[\begin{matrix}u\\v\\1\\\end{matrix}\right],\$\$
+\$\$p^\\prime=\\left[\\begin{matrix}u\\\\v\\\\1\\\\\\end{matrix}\\right],\$\$
 by the following transformation:
-\$\$p^\prime Z=KP\$\$
+\$\$p^\\prime Z=KP\$\$
 where
-\$\$K=\left[\begin{matrix}K_{00}&K_{01}&K_{02}\\K_{10}&K_{11}&K_{12}\\K_{20}&K_{21}&K_{22}\\\end{matrix}\right]=\left[\begin{matrix}f&0&u_0\\0&f&v_0\\0&0&1\\\end{matrix}\right].\$\$
+\$\$K=\\left[\\begin{matrix}K_{00}&K_{01}&K_{02}\\K_{10}&K_{11}&K_{12}\\\\K_{20}&K_{21}&K_{22}\\\\\\end{matrix}\\right]=\\left[\\begin{matrix}f&0&u_0\\\\0&f&v_0\\\\0&0&1\\\\\\end{matrix}\\right].\$\$
 is called the intrinsic matrix. The above equation can be written explicitly as
-\$\$\left[\begin{matrix}u\\v\\1\\\end{matrix}\right]Z=\left[\begin{matrix}f&0&u_0\\0&f&v_0\\0&0&1\\\end{matrix}\right]\left[\begin{matrix}X\\Y\\Z\\\end{matrix}\right].\$\$
+\$\$\\left[\\begin{matrix}u\\\\v\\\\1\\\\\\end{matrix}\\right]Z=\\left[\\begin{matrix}f&0&u_0\\\\0&f&v_0\\\\0&0&1\\\\\\end{matrix}\\right]\\left[\\begin{matrix}X\\\\Y\\\\Z\\\\\\end{matrix}\\right].\$\$
 
-The intrinsic matrix is a special case of a projective transformation (homography) that applies only scaling by the focal length \$f\$ and translation by the principal point \$\left[u_0, v_0\right]\$. Some authors allow for different focal lengths along the x and y axes (i.e., \$K_{00}\neq\ K_{11})\$, but it is always possible to stretch the image to produce an image for which \$K_{00}=K_{11}\$. Some authors allow a nonzero \$K_{01}\$ element, which implies a skew, but it is always possible to de-skew the image to produce an image for which \$K_{01}=0\$. We call the transformation in the equation above the perspective projection and images that obey it perspective images, also known as rectilinear images or pinhole images.
+The intrinsic matrix is a special case of a projective transformation (homography) that applies only scaling by the focal length \$f\$ and translation by the principal point \$\\left[u_0, v_0\\right]\$. Some authors allow for different focal lengths along the \$x\$ and \$y\$ axes (i.e., \$K_{00}\neq\ K_{11})\$, but it is always possible to stretch the image to produce an image for which \$K_{00}=K_{11}\$. Some authors allow a nonzero \$K_{01}\$ element, which implies a skew, but it is always possible to de-skew the image to produce an image for which \$K_{01}=0\$. We call the transformation in the equation above the perspective projection and images that obey it perspective images, also known as rectilinear images or pinhole images.
 
