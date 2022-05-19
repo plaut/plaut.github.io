@@ -267,5 +267,5 @@ We refer to \$\\rho\$ as the cylindrical radial distance and to \$\\varphi\$ as 
 Compare the equation above to the perspective projection. Here too there is an intrinsic matrix which applies only scaling and translation. The difference is that here the intrinsic matrix multiplies a 3D point given in cylindrical coordinates rather than Cartesian coordinates.
 
 \$f_\\varphi\$ and \$f_Y\$ are related to the image size and field of view by
-\$\\begin{matrix}f_\\varphi=\sfrac{\\Phi}{W}\\\\f_Y=\\frac{H}{2\\tan{\\frac{\\Psi}{2}}}\\ \\\\\\end{matrix},\$
+\$\$\\begin{matrix}f_\\varphi=\\frac{\\Phi}{W}\\\\f_Y=\\frac{H}{2\\tan{\\frac{\\Psi}{2}}}\\ \\\\\\end{matrix},\$\$
 where \$\\Phi\$ is the horizontal field of view and \$\\Psi\$ is the vertical field of view.
