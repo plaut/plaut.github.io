@@ -11,7 +11,7 @@ We will focus on two computer vision tasks: 2D object detection and monocular 3D
 
 # Perspective images and the pinhole camera model
 ## The perspective projection
-An image is a two-dimensional array of pixels, with size H\times\ W, where each pixel is a three-dimensional array for a color image. The camera model defines the mapping between a point in 3D space,
+An image is a two-dimensional array of pixels, with size \$H\times\ W\$, where each pixel is a three-dimensional array for a color image. The camera model defines the mapping between a point in 3D space,
 \$\$ P=\\left[\\begin{matrix}X\\\\Y\\\\Z\\\\\\end{matrix}\\right],\$\$
 and the 2D coordinate of the pixel to which it is mapped,
 \$\$p=\\left[\\begin{matrix}u\\\\v\\\\\\end{matrix}\\right].\$\$
