@@ -153,8 +153,8 @@ This is the same image from New York City after warping:
 
 In the upright view, objects are aligned to the ground plane and have zero pitch and zero roll, they are translation invariant, the 2D bounding boxes aligned to the pixel grid are tight, and 3D bounding box parameter predictions are independent of intrinsic or extrinsic calibration.
 
-The mapping between a 3D point in (tilted) camera coordinates P and the homogenous pixel coordinates in the warped image \${p\\prime}^\\prime\$ now includes an extrinsic rotation:
-\$\${p\\prime}^\\prime Z=KRP\$\$
+The mapping between a 3D point in (tilted) camera coordinates P and the homogenous pixel coordinates in the warped image \${p^{\\prime\\prime}$ now includes an extrinsic rotation:
+\$\$p^{\\prime\\prime} Z=KRP\$\$
 where \$R\$ is the rotation matrix from the physical (tilted) camera to the upright coordinate frame parallel to the ground.
 
 # Fisheye cameras
@@ -163,11 +163,29 @@ Images from fisheye cameras look very different from images captured by perspect
 ![](img/The_Squirrels_0048.jpg)
 >Photo by Josh Berkow and Eric Berkow ([CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/deed.en))
 
-At first glance, this might remind us of what a perspective image with radial distortion looks like. Yet, no undistortion can warp this image to an image that obeys the pinhole camera model. In this image, the horizontal field of view is larger than \$180\\deg\$. It is impossible for a pinhole camera to capture objects that are behind the camera, i.e., at viewing angles larger than \$90\\deg\$ from the optical axis. The reason straight lines in 3D look curved in this image is because this image was created using an entirely different projection.
+At first glance, this might remind us of what a perspective image with radial distortion looks like. Yet, no undistortion can warp this image to an image that obeys the pinhole camera model. In this image, the horizontal field of view is larger than \$180^\\circ\$. It is impossible for a pinhole camera to capture objects that are behind the camera, i.e., at viewing angles larger than \$90^\\circ\$ from the optical axis. The reason straight lines in 3D look curved in this image is because this image was created using an entirely different projection.
 
 There are various projections that are all referred to as *fisheye*, including equidistant, equisolid, stereographic, and orthographic. We shall use the equidistant fisheye camera model.
 
-A 3D point with a viewing angle \$\\theta=atan2{\\left(\\sqrt{X^2+Y^2}, Z\\right)}\$, also known the the *angle of incidence*, is projected onto the equidistant fisheye image at a distance from the principal point that is proportional to \$\\theta\$ (if you are not familiar with the *atan2* function, see its definition [here](https://en.wikipedia.org/wiki/Atan2)).
+A 3D point with a viewing angle \$\\theta=\\text{atan2}{\\left(\\sqrt{X^2+Y^2}, Z\\right)}\$, also known the the *angle of incidence*, is projected onto the equidistant fisheye image at a distance from the principal point that is proportional to \$\\theta\$ (if you are not familiar with the *atan2* function, see its definition [here](https://en.wikipedia.org/wiki/Atan2)).
 
-Such images are able to capture objects at viewing angles of \$90\\deg\$ and beyond, and nothing special happens at \$90\\deg\$. Many fisheye cameras have a horizontal FoV of around \$190\\deg\$. The 3D to 2D projection is defined by
-\$\$\\left[\\begin{matrix}u\\\\v\\\\1\\\\\\end{matrix}\\right]Z=\\left[\\begin{matrix}f&0&u_0\\\\0&f&v_0\\\\0&0&1\\\\\\end{matrix}\\right]\\left[\\begin{matrix}\\frac{XZ}{\\sqrt{X^2+Y^2}}atan2{\\left(\\sqrt{X^2+Y^2},Z\\right)}\\\\\\frac{YZ}{\\sqrt{X^2+Y^2}}atan2{\\left(\\sqrt{X^2+Y^2},Z\\right)}\\\\Z\\\\\\end{matrix}\\right].\$\$
+Such images are able to capture objects at viewing angles of \$90^\\circ\$ and beyond, and nothing special happens at \$90^\\circ\$. Many fisheye cameras have a horizontal FoV of around \$190^\\circ\$. The 3D to 2D projection is defined by
+\$\$\\left[\\begin{matrix}u\\\\v\\\\1\\\\\\end{matrix}\\right]Z=\\left[\\begin{matrix}f&0&u_0\\\\0&f&v_0\\\\0&0&1\\\\\\end{matrix}\\right]\\left[\\begin{matrix}\\frac{XZ}{\\sqrt{X^2+Y^2}}\\text{atan2}{\\left(\\sqrt{X^2+Y^2},Z\\right)}\\\\\\frac{YZ}{\\sqrt{X^2+Y^2}}\\text{atan2}{\\left(\\sqrt{X^2+Y^2},Z\\right)}\\\\Z\\\\\\end{matrix}\\right].\$\$
+
+## Fisheye cameras and distortion
+In the same manner that narrow FoV cameras may deviate from the pinhole camera model and require undistortion in order to obey the perspective projection equation, fisheye cameras may also deviate from the equidistant fisheye model and require undistortion in order to obey the fisheye projection equation. The calibrated distortion parameters associated with a fisheye camera (e.g., radial polynomial coefficients in the [OpenCV model](https://docs.opencv.org/3.4/db/d58/group__calib3d__fisheye.html) or the [WoodScape](https://openaccess.thecvf.com/content_ICCV_2019/papers/Yogamani_WoodScape_A_Multi-Task_Multi-Camera_Fisheye_Dataset_for_Autonomous_Driving_ICCV_2019_paper.pdf) model) define not how to undistort it to an ideal pinhole camera model, but rather how to undistort it to an ideal fisheye camera model.
+
+In the equidistant fisheye model, the distance between a pixel in the image and the principal point, \$r=\\sqrt{\\left(u-u_0\\right)^2+\\left(v-v_0\\right)^2}\$, is directly proportional to the angle between its ray and the optical axis, \$\\theta=\\text{atan2}{\\left(\\sqrt{X^2+Y^2},Z\\right)}\$:
+\$\$r=f\\theta.\$\$
+
+In the equisolid fisheye projection \$r=2f\\sin{\\frac{\\theta}{2}}\$, in the stereographic fisheye projection \$r=2f\\tan{\\frac{\\theta}{2}}\$, and in the orthographic fisheye projection \$r=f\\sin{\\theta}\$. In all the examples in this tutorial we will use the equidistant fisheye projection.
+
+In OpenCV, the equidistant fisheye projection is used, and distortion is added by replacing \theta in the projection equation by
+\$\$\\theta_d=\\theta+k_1\\theta^3+k_2\\theta^5+k_3\\theta^7+k_4\\theta^9\$\$
+where the polynomial coefficients \$k_1, k_2, k_3, k_4\$ determine the radial distortion. With distortion,
+\$\$r=f\\theta_d=f\\left(\\theta+k_1\\theta^3+k_2\\theta^5+k_3\\theta^7+k_4\\theta^9\\right).\$\$
+In the WoodScape dataset, the equidistant fisheye projection is used again, but distortion is given in terms of \$r\\left(\\theta\\right)\$ such that \$f\$ is hidden inside the distortion coefficients, and the polynomial is of lower order and has both even and odd powers:
+\$\$r=a_1\\theta+a_2\\theta^2+a_3\\theta^3+a_4\\theta^4\$\$
+Other authors and fisheye camera manufacturers have proposed various other parametrizations, and some define \$r\\left(\\theta\\right)\$ numerically using a lookup table.
+
+It is important to understand the difference between these radial distortion functions and the fisheye projection. The unnatural and deformed appearance of fisheye images are mainly the result of the fisheye projection, not the distortion coefficients. To a human, a fisheye image with zero radial distortion would not look very different from a fisheye image with nonzero distortion – both would look very different from perspective images.
