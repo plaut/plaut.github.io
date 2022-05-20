@@ -479,6 +479,6 @@ The new principal point is
 
 Warping the fisheye image to a cylindrical image with this updated principal point produces the following image:
 
-![](img/woodscape9.png)
+![](img/woodscape8.png)
 
 This is the image we showed earlier when we first introduced the fisheye to cylindrical warping, without mentioning the tilt correction.
