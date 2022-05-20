@@ -392,3 +392,30 @@ The following figure illustrates the relationship between the imaginary object a
 
 ![](img/Virtual.png)
 
+The depth \$\widetilde{Z}\$ to the imaginary object is actually the cylindrical radial distance \rho to the real object, and the azimuth of the ray pointing towards the object is changed by applying the tangent function.
+
+When creating the cylindrical image, we choose its size such that its intrinsic matrix is identical to that of the perspective camera used during training. Alternatively, we can normalize the depth regressed from perspective images to \$Z/f\$ during training, and multiply \$\widetilde{Z}\$ by \$f\$ during inference. When using focal length normalization, all 3D bounding box parameters are camera agnostic, and we can test on cylindrical images with an intrinsic matrix different from the intrinsic matrix of the perspective training images, or train (and test) on a union of multiple datasets with different calibrations.
+
+To summarize this method, we take a fisheye image and warp it to a cylindrical image. Then we show it to a standard monocular 3D object detector which was designed for perspective images and was trained only on perspective images (e.g., [CenterNet](https://arxiv.org/abs/1904.07850), [MonoDIS](https://openaccess.thecvf.com/content_ICCV_2019/html/Simonelli_Disentangling_Monocular_3D_Object_Detection_ICCV_2019_paper.html), [FCOS3D](https://openaccess.thecvf.com/content/ICCV2021W/3DODI/html/Wang_FCOS3D_Fully_Convolutional_One-Stage_Monocular_3D_Object_Detection_ICCVW_2021_paper.html), trained on the KITTI dataset). We apply transformations to the outputs as a post processing step, which account for how the predicted \$Z\$ is actually \$\\rho\$ and the ray pointing towards the object is related to the 2D keypoint by the cylindrical projection instead of the perspective projection. The updated azimuth of the ray pointing towards the object is also used to recover the global yaw from the local yaw.
+
+![](img/flow.png)
+
+More information about this method can be found in the paper:
+***E. Plaut, E. B. Yaacov, B. E. Shlomo, [3D Object Detection from a Single Fisheye Image Without a Single Fisheye Training Image](https://openaccess.thecvf.com/content/CVPR2021W/OmniCV/html/Plaut_3D_Object_Detection_From_a_Single_Fisheye_Image_Without_a_CVPRW_2021_paper.html), Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), 2021***
+
+#### Failure case and training a model jointly on perspective cameras and fisheye cameras
+This method is useful when we want to detect 3D objects from a fisheye camera even though we do not have any training set of fisheye images with 3D bounding box annotations. It works remarkably well as long as the objects are not too large and not too close to the camera.
+
+When an object is large or is close to the camera, the small angle approximation, which leads to the magnification equation equivalent to that of perspective images up to replacement of \$Z\$ by \$\\rho\$, is no longer accurate. Using a standard monocular 3D object detector and interpreting its \$Z\$ output as \$\\rho\$ will be less accurate for such objects.
+
+Wrose yet, such objects look deformed: a cube in 3D appears to have the shape of a banana in the cylindrical image:
+
+![](img/00499_MVL.png)
+
+This car looks like it is facing towards the right and slightly away from the camera according to the front side of the car, but slightly towards the camera according to the back side of the car. A monocular 3D object detector trained only on perspective images has not seen any car like this and would not be able to predict the orientation of the car. Features that the orientation prediction relies on are out of distribution when activated by such an image, and the orientation prediction might be as good as random.
+
+In order to overcome failure in the yaw prediction of large and near objects, we must obtain a training set of fisheye images and 3D bounding box annotations and train the detector on it.
+
+Perspective images can still be useful for pretraining the model, as we often have a large training set of perspective images and would like to only finetune a model on a small training set of fisheye images.
+
+Another option is to train a joint model on a union of perspective images and fisheye images. During training, when we train on a sample or a batch from a perspective camera, we use the ground truth annotations as usual, and when we train on a sample or a batch from a fisheye camera warped to the cylindrical projection, we use the imaginary object as the ground truth. During inference, when processing an image from a perspective camera we lift the 3D bounding box the usual way, and when processing a cylindrical image from a fisheye camera we lift it using the post-processing transformation from the imaginary object which would create the image if it were a perspective projection to the real object.
