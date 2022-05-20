@@ -363,3 +363,32 @@ where \$\\varphi\$ is the azimuth of the ray pointing towards the object. In per
 \$\$\\varphi=\\text{atan}\\left(\\frac{u-u_0}{f}\\right)\$\$
 In cylindrical images,
 \$\$\\varphi=\\frac{u-u_0}{f}\$\$
+
+### Training on perspective images and testing on cylindrical images
+What will happen if we take an existing monocular 3D object detector that was designed for perspective images (e.g., [CenterNet](https://arxiv.org/abs/1904.07850), [MonoDIS](https://openaccess.thecvf.com/content_ICCV_2019/html/Simonelli_Disentangling_Monocular_3D_Object_Detection_ICCV_2019_paper.html), [FCOS3D](https://openaccess.thecvf.com/content/ICCV2021W/3DODI/html/Wang_FCOS3D_Fully_Convolutional_One-Stage_Monocular_3D_Object_Detection_ICCVW_2021_paper.html)), train it only on perspective images, and during inference show it a cylindrical image?
+
+Such a model, to which we have made no adaptations to the cylindrical projection and which has not seen any cylindrical images during training, will process the cylindrical image as if it were a perspective image. It suffers from the same optical illusion we experienced with the cylindrical image of the Colosseum in Rome, as if the walls of the Colosseum had a constant \$Z\$, even though in 3D space they have a constant \$\\rho\$.
+
+The monocular 3D object detector then outputs the 3D bounding boxes which correspond to an imaginary 3D scene which would create the image if it were captured by a pinhole camera.
+
+Using the small angle approximation, we find the transformation from the imaginary 3D bounding box parameters to the parameters of the 3D bounding box around the real object.
+
+The detector predicts a 3D bounding box of an imaginary object at location \$\\left[\\begin{matrix}\\widetilde{X}&\\widetilde{Y}&\\widetilde{Z}\\\\\\end{matrix}\\right]\$, and we know this vector corresponds to cylindrical coordinates of the real object:
+\$\$\\left[\\begin{matrix}\\widetilde{X}\\\\\\widetilde{Y}\\\\\\widetilde{Z}\\\\\\end{matrix}\\right]=\\left[\\begin{matrix}\\rho\\varphi\\\\Y\\\\\\rho\\\\\\end{matrix}\\right]=\\left[\\begin{matrix}\\sqrt{X^2+Z^2}\\text{atan2}{\\left(X,Z\\right)}\\\\Y\\\\\\sqrt{X^2+Z^2}\\\\\\end{matrix}\\right]\$\$
+The location of the real 3D bounding box in Cartesian coordinates is
+\$\$\\left[\\begin{matrix}X\\\\Y\\\\Z\\\\\\end{matrix}\\right]=\\left[\\begin{matrix}\\rho\\sin{\\varphi}\\\\\\widetilde{Y}\\\\\\rho\\cos{\\varphi}\\\\\\end{matrix}\\right]=\\left[\\begin{matrix}\\widetilde{Z}\\sin{\\left(\\widetilde{X}/\\widetilde{Z}\\right)}\\\\\\widetilde{Y}\\\\\\widetilde{Z}\\cos{\\left(\\widetilde{X}/\\widetilde{Z}\\right)}\\\\\\end{matrix}\\right]\$\$
+The azimuth and elevation of the ray pointing towards the real object are
+
+\$\$\\left[\\begin{matrix}\\varphi\\\\\\psi\\\\\\end{matrix}\\right]=
+\\left[\\begin{matrix}\\text{atan}{\\left(X/Z\\right)}\\\\\\text{atan}{\\left(Y/Z\\right)}\\\\\\end{matrix}\\right]=
+\\left[\\begin{matrix}\\text{atan}{\\left(\\tan{\\left(\\widetilde{X}/\\widetilde{Z}\\right)}\\right)}\\\\\\text{atan}{\\left(\\widetilde{Y}/\\left(\\widetilde{Z}\\cos{\\left(\\widetilde{X}/\\widetilde{Z}\\right)}\\right)\\right)}\\\\\\end{matrix}\\right]=
+\\left[\\begin{matrix}\\tan{\\widetilde{\\varphi}}\\\\\\text{atan}{\\left(\\tan{\\widetilde{\\psi}}/\\cos{\\left(\\tan{\\widetilde{\\varphi}}\\right)}\\right)}\\\\\\end{matrix}\\right]\$\$
+
+Thus, to recover the 3D bounding box of an object in a cylindrical image using a monocular 3D object detector that was designed for perspective images and trained only on perspective images, all we have to do is apply these transformations to the output as a post-processing step.
+
+The global yaw \$\\beta\$ is related to the local yaw \beta_{local} (the angle which the CNN predicts) by
+\$\$\\beta=\\beta_{local}+\\varphi=\\beta_{local}+\\tan{\\widetilde{\\varphi}}\$\$
+The following figure illustrates the relationship between the imaginary object and the real object:
+
+![](img/Virtual.png)
+
