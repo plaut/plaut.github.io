@@ -482,3 +482,32 @@ Warping the fisheye image to a cylindrical image with this updated principal poi
 ![](img/woodscape8.png)
 
 This is the image we showed earlier when we first introduced the fisheye to cylindrical warping, without mentioning the tilt correction.
+
+In the WoodScale dataset, there are four fisheye cameras, each facing a different direction. The example we have been using is from the rear view. Here are examples from the other three cameras:
+
+Front:
+
+![](img/fv.png)
+
+Left:
+
+![](img/mvl.png)
+
+Right:
+
+![](img/mvr.png)
+
+There is no reason not to train a single CNN on data from all four cameras jointly.
+
+In order to project a 3D point in fisheye camera coordinates, \$P=\\left[\\begin{matrix}X&&Y&&Z\\end{matrix}\\right],\$ onto the upright cylindrical image, we must use not only the intrinsic matrix but also the extrinsic rotation. Let \$R\$ be the extrinsic matrix, which is the rotation between the fisheye camera’s coordinate frame and the upright coordinate frame (parallel to the ground but in the azimuthal viewing direction of the camera). First, we rotate \$P\$ by \$R\$ by computing \$RP\$. Then we convert the rotated vector to cylindrical coordinates and normalize it to \$\\rho=1\$. Then we multiply the cylindrical coordinates by the cylindrical intrinsic matrix.
+
+When computing the ray associated with a 2D keypoint in the cylindrical image, we multiply the homogeneous coordinates of the keypoint by the inverse intrinsic matrix, then convert from cylindrical coordinates to cartesian coordinates, and then rotate by the inverse extrinsic rotation matrix.
+
+Tilted cameras have one more complication when it comes to monocular 3D object detection. This complication has nothing to do with fisheye cameras or the cylindrical projection, it is merely the result of the tilt itself. When the camera is upright (think of datasets from front facing perspective cameras like KITTI), we often assume that objects have pure yaw rotation with zero pitch and zero roll, where yaw is defined as the rotation around the \$y\$ axis. This is a good approximation, as vehicles are almost always parallel to the ground and the ground is approximately flat. We train detectors to predict only the yaw, and when lifting the 3D bounding box we assume zero pitch and zero roll. However, when the camera is tilted, its \$y\$ axis is no longer perpendicular to the ground, and objects have nonzero roll, pitch and yaw.
+
+The detector sees the cylindrical image, where objects do look parallel to the ground and with pure yaw. Yet, we should not train the detector to predict the yaw of the object annotated in the fisheye camera coordinate frame while ignoring the roll and pitch. Instead, we should compute the orientation of the object in the upright view by accounting for the extrinsic rotation. We do so by simple matrix multiplication or (quaternion multiplication): if \$R\$ is the extrinsic rotation matrix and \$Q\$ is the object orientation matrix in fisheye camera coordinates, then \$RQ\$ is the object orientation associated with the upright cylindrical image. If the object is parallel to the ground, then \$RQ\$ should be a rotation purely around the \$y\$ axis, and the angle of rotation is what we train the monocular 3D object detector to predict.
+
+# Summary
+In computer vision, it is important to set up a machine learning model in a way that makes sense geometrically. Neural networks are not magic, and no matter how large the training set is or how large the neural network is, a poorly set up model will never perform as well as a model with a sensible design. When a model is trained with flawed geometry, it may give the appearance of success on a dataset that comes from the same camera and split into training and testing sets. In reality, we are interested in training on samples from multiple cameras, and testing on cameras different from the ones used for data collection, and that is when a proper setup becomes crucial.
+
+There is no translation invariant magnification in raw fisheye images, but under a certain approximation there is a translation invariant magnification in cylindrical images. We should warp fisheye images to upright cylindrical images and train a monocular 3D object detector to regress the cylindrical radial distance to the objects (normalized by the focal length). Then we can train on a union of datasets from fisheye cameras with different calibrations, and test on new cameras with new calibrations. We can also train a monocular 3D object detector on perspective images and test on cylindrical images from fisheye cameras, or train a model jointly on images from perspective cameras and fisheye cameras.
