@@ -178,24 +178,24 @@ At first glance, this might remind us of what a perspective image with radial di
 
 There are various projections that are all referred to as *fisheye*, including equidistant, equisolid, stereographic, and orthographic. We shall use the equidistant fisheye camera model.
 
-A 3D point with a viewing angle \$\\theta=\\text{atan2}{\\left(\\sqrt{X^2+Y^2}, Z\\right)}\$, also known the the *angle of incidence*, is projected onto the equidistant fisheye image at a distance from the principal point that is proportional to \$\\theta\$ (if you are not familiar with the *atan2* function, see its definition [here](https://en.wikipedia.org/wiki/Atan2)).
+A 3D point with a viewing angle \$\\theta=\\text{atan2}{\\left(\\sqrt{X^2+Y^2}, Z\\right)}\$, also known the the *angle of incidence*, is projected onto the equidistant fisheye image at a distance from the principal point, \$r=\\sqrt{\\left(u-u_0\\right)^2+\\left(v-v_0\\right)^2}\$, that is proportional to \$\\theta\$ (if you are not familiar with the *atan2* function, see its definition [here](https://en.wikipedia.org/wiki/Atan2)).
 
 Such images are able to capture objects at viewing angles of \$90^\\circ\$ and beyond, and nothing special happens at \$90^\\circ\$. Many fisheye cameras have a horizontal FoV of around \$190^\\circ\$. The 3D to 2D projection is defined by
 \$\$\\left[\\begin{matrix}u\\\\v\\\\1\\\\\\end{matrix}\\right]Z=\\left[\\begin{matrix}f&0&u_0\\\\0&f&v_0\\\\0&0&1\\\\\\end{matrix}\\right]\\left[\\begin{matrix}\\frac{XZ}{\\sqrt{X^2+Y^2}}\\text{atan2}{\\left(\\sqrt{X^2+Y^2},Z\\right)}\\\\\\frac{YZ}{\\sqrt{X^2+Y^2}}\\text{atan2}{\\left(\\sqrt{X^2+Y^2},Z\\right)}\\\\Z\\\\\\end{matrix}\\right].\$\$
 
 ## Fisheye cameras and distortion
-In the same manner that narrow FoV cameras may deviate from the pinhole camera model and require undistortion in order to obey the perspective projection equation, fisheye cameras may also deviate from the equidistant fisheye model and require undistortion in order to obey the fisheye projection equation. The calibrated distortion parameters associated with a fisheye camera (e.g., radial polynomial coefficients in the [OpenCV model](https://docs.opencv.org/3.4/db/d58/group__calib3d__fisheye.html) or the [WoodScape](https://openaccess.thecvf.com/content_ICCV_2019/papers/Yogamani_WoodScape_A_Multi-Task_Multi-Camera_Fisheye_Dataset_for_Autonomous_Driving_ICCV_2019_paper.pdf) model) define not how to undistort it to an ideal pinhole camera model, but rather how to undistort it to an ideal fisheye camera model.
+In the same manner that narrow FoV cameras may deviate from the pinhole camera model and require undistortion in order to obey the perspective projection equation, fisheye cameras may also deviate from the fisheye camera model and require undistortion in order to obey the equidistant fisheye projection equation. The calibrated distortion parameters associated with a fisheye camera (e.g., radial polynomial coefficients in the [OpenCV model](https://docs.opencv.org/3.4/db/d58/group__calib3d__fisheye.html) or the [WoodScape](https://openaccess.thecvf.com/content_ICCV_2019/papers/Yogamani_WoodScape_A_Multi-Task_Multi-Camera_Fisheye_Dataset_for_Autonomous_Driving_ICCV_2019_paper.pdf) model) define not how to undistort it to an ideal pinhole camera model, but rather how to undistort it to an ideal fisheye camera model.
 
-In the equidistant fisheye model, the distance between a pixel in the image and the principal point, \$r=\\sqrt{\\left(u-u_0\\right)^2+\\left(v-v_0\\right)^2}\$, is directly proportional to the angle between its ray and the optical axis, \$\\theta=\\text{atan2}{\\left(\\sqrt{X^2+Y^2},Z\\right)}\$:
+In the equidistant fisheye model, the distance between a pixel in the image and the principal point is directly proportional to the angle of incidence:
 \$\$r=f\\theta.\$\$
 
-In the equisolid fisheye projection \$r=2f\\sin{\\frac{\\theta}{2}}\$, in the stereographic fisheye projection \$r=2f\\tan{\\frac{\\theta}{2}}\$, and in the orthographic fisheye projection \$r=f\\sin{\\theta}\$. In all the examples in this tutorial we will use the equidistant fisheye projection.
+In the equisolid fisheye projection \$r=2f\\sin{\\frac{\\theta}{2}}\$, in the stereographic fisheye projection \$r=2f\\tan{\\frac{\\theta}{2}}\$, and in the orthographic fisheye projection \$r=f\\sin{\\theta}\$. In all the examples in this tutorial we will use the equidistant fisheye projection, as in the OpenCV model and the WoodScape model.
 
-In OpenCV, the equidistant fisheye projection is used, and distortion is added by replacing \theta in the projection equation by
+In OpenCV, distortion is added by replacing \theta in the projection equation by
 \$\$\\theta_d=\\theta+k_1\\theta^3+k_2\\theta^5+k_3\\theta^7+k_4\\theta^9\$\$
 where the polynomial coefficients \$k_1, k_2, k_3, k_4\$ determine the radial distortion. With distortion,
 \$\$r=f\\theta_d=f\\left(\\theta+k_1\\theta^3+k_2\\theta^5+k_3\\theta^7+k_4\\theta^9\\right).\$\$
-In the WoodScape dataset, the equidistant fisheye projection is used again, but distortion is given in terms of \$r\\left(\\theta\\right)\$ such that \$f\$ is hidden inside the distortion coefficients, and the polynomial is of lower order and has both even and odd powers:
+In the WoodScape dataset, distortion is given in terms of \$r\\left(\\theta\\right)\$ such that \$f\$ is hidden inside the distortion coefficients, and the polynomial is of lower order and has both even and odd powers:
 \$\$r=a_1\\theta+a_2\\theta^2+a_3\\theta^3+a_4\\theta^4\$\$
 Other authors and fisheye camera manufacturers have proposed various other parametrizations, and some define \$r\\left(\\theta\\right)\$ numerically using a lookup table.
 
@@ -220,7 +220,7 @@ When testing on a new camera, with different focal length, principal point, dist
 Some have resorted to avoiding any learning of 3D bounding box parameters. Instead, the CNN only detects a 2D keypoint, such as the point where a wheel of the car touches the ground. Then, the ray corresponding to that point is computed using the fisheye camera model (e.g., by a lookup table). Assuming the ground is flat, the 3D position of the object is estimated as the intersection of this ray with the ground plane. For some use cases, such as detecting adjacent cars when parking, this may work well. Yet, as a more general monocular 3D object detector, this approach is the fisheye equivalent to archaic methods, instead of state-of-the-art monocular 3D object detectors, and it obviously fails at longer distances, when the ground is not flat, and for objects that do not touch the ground.
 
 ## Rectification
-One of the first instincts many engineers have is to try to rectify the fisheye image, to warp it into a perspective image which obeys the pinhole camera model. As discussed above, pixels in the fisheye image that correspond to viewing angles larger than \$90^\\circ\$ from the camera axis have nowhere to me mapped to in a perspective image. Therefore, it is only possible to create a perspective image with a limited FoV which covers viewing angles smaller than \$90^\\circ\$. Computer vision libraries such as [OpenCV](https://docs.opencv.org/3.4/db/d58/group__calib3d__fisheye.html#ga167df4b00a6fd55287ba829fbf9913b9) offer functions that do so.
+One of the first instincts many engineers have is to try to rectify the fisheye image, to warp it into a perspective image which obeys the pinhole camera model. However, pixels in the fisheye image that correspond to viewing angles larger than \$90^\\circ\$ from the camera axis have nowhere to be mapped to in a perspective image. Therefore, it is only possible to create a perspective image with a limited FoV which covers viewing angles smaller than \$90^\\circ\$. Computer vision libraries such as [OpenCV](https://docs.opencv.org/3.4/db/d58/group__calib3d__fisheye.html#ga167df4b00a6fd55287ba829fbf9913b9) offer functions that do so.
 
 To warp a fisheye image to a perspective image, we can compute the inverse pixel mapping ourselves. We multiply the homogeneous coordinates of each pixel in the target perspective image by the inverse intrinsic matrix, which gives us a ray pointing in its direction. Then we project that ray onto the fisheye image using the fisheye camera model.
 
@@ -232,7 +232,7 @@ Notice that the perspective image only captures part of the field of view. We cr
 
 ![](img/woodscape2.png)
 
-The field of view in the warped image is now larger, but still does not capture the full field of view of the fisheye image. No matter how small we make the focal length of the warped image, it will never capture viewing angles larger than \$90^\\circ\$. This begs the question: if we resort to limiting the field of view to one that is suitable for the perspective projection, why did we buy a fisheye camera in the first place? Why not use an actual perspective camera instead?
+The FoV in the warped image is now larger, but still does not capture the full FoV of the fisheye image. No matter how small we make the focal length of the warped image, it will never capture viewing angles larger than \$90^\\circ\$. This begs the question: if we resort to limiting the field of view to one that is suitable for the perspective projection, why did we buy a fisheye camera in the first place? Why not use an actual perspective camera instead?
 
 When the viewing angle is smaller than \$90^\\circ\$ but still large, the warped image suffers from artifacts that become worse farther from the center. These artifacts occur because pixels far from the center have a sparser pixel mapping compared to pixels near the center.
 
@@ -241,13 +241,13 @@ Yet another disadvantage is that objects near the center of the fisheye image be
 ## Extrinsic rotation
 Fisheye cameras on vehicles are often installed tilted downwards towards the ground, unlike perspective cameras which are always installed upright in vehicles. This may be because in the past, fisheye cameras were used for tasks where the area close to the ground is especially important, such as parking assist systems and rear pedestrian alert systems. Another reason may be that fisheye images look deformed and unnatural whether they are tilted or upright, unlike perspective images who look natural when they are upright but not when they are tilted and more easily convince engineers to install them upright.
 
-The tilt in the WoodScape sample above is evident in the warped image in that straight vertical lines in the 3D world appear to tilt towards the right when they are in the right half of the image and towards the left when they are in the left half of the image.
+The tilt in the WoodScape sample above is evident in the warped image above in that straight vertical lines in the 3D world appear to tilt towards the right when they are in the right half of the image and towards the left when they are in the left half of the image.
 
 When warping the fisheye image to a perspective image, we can simulate an upright pinhole camera whose optical axis is parallel to the ground instead of in the same direction as the optical axis of the physical fisheye camera:
 
 ![](img/woodscape3.png)
 
-Now vertical lines in the 3D world appear as vertical lines in the image, but a large part of the warped image is mapped from outside the field of view of the fisheye image, which is wasteful. We should change the principal point to account for the extrinsic rotation:
+Now vertical lines in the 3D world appear as vertical lines in the image, but a large part of the warped image is mapped from outside the FoV of the fisheye image, which is wasteful. We should change the principal point to account for the extrinsic rotation:
 
 ![](img/woodscape4.png)
 
@@ -284,7 +284,7 @@ We refer to \$\\rho\$ as the cylindrical radial distance and to \$\\varphi\$ as 
 Compare the equation above to the perspective projection. Here too there is an intrinsic matrix which applies only scaling and translation. The difference is that here the intrinsic matrix multiplies a 3D point given in cylindrical coordinates rather than Cartesian coordinates.
 
 \$f_\\varphi\$ and \$f_Y\$ are related to the image size and field of view by
-\$\$\\begin{matrix}f_\\varphi=\\Phi/W\\\\f_Y=\frac{1}{2}H/\\tan{\\frac{\\Psi}{2}}\\ \\\\\\end{matrix}\$\$
+\$\$\\begin{matrix}f_\\varphi=\\Phi/w\\\\f_Y=\frac{1}{2}h/\\tan{\\left(\\Psi/2\\right)}\\ \\\\\\end{matrix}\$\$
 where \$\\Phi\$ is the horizontal field of view and \$\\Psi\$ is the vertical field of view.
 
 ### Fisheye to cylindrical warping
@@ -293,16 +293,18 @@ Fisheye images can be warped to cylindrical images by computing the inverse pixe
 We convert the cylindrical coordinates to Cartesian coordinates:
 \$\$\\left[\\begin{matrix}X\\\\Y\\\\Z\\\\\\end{matrix}\\right]=\\left[\\begin{matrix}\\rho\\sin{\\varphi}\\\\Y\\\\\\rho\\cos{\\varphi}\\\\\\end{matrix}\\right]=\\left[\\begin{matrix}\\sin{\\varphi}\\\\Y\\\\\\cos{\\varphi}\\\\\\end{matrix}\\right].\$\$
 
-Then we project the ray onto the fisheye image using the fisheye projection with the camera’s focal length, principal point, and distortion coefficients. Once the fisheye image is warped to a cylindrical image, it becomes completely independent of the intrinsic parameters of the physical fisheye camera (focal length, principal point, distortion coefficients).
+Then we project the ray onto the fisheye image using the fisheye projection with the camera’s focal length, principal point, and distortion coefficients.
 
-Here is the WoodScape sample, which in a previous section we warped to a perspective image, now warped to a cylindrical image:
+Once the fisheye image is warped to a cylindrical image, it becomes completely independent of the intrinsic parameters of the physical fisheye camera (focal length, principal point, distortion coefficients).
+
+Here is the WoodScape sample, which in a previous section we warped to a perspective image, now warped to a cylindrical image[\*](https://plaut.github.io/fisheye_tutorial/#extrinsic-rotation-2):
 
 ![](img/woodscape8.png)
 
 ### Comparing cylindrical images to perspective images
-Warping a fisheye image to a cylindrical image does not cause the problems that arise when trying to warp a fisheye image to a perspective image. A cylindrical image is able to capture a field of view of over \$180^\\circ\$ (nothing special happens at a viewing angle of \$90^\\circ\$), there are no blurs or artifacts, and no drastic changes in the relative area occupied by objects in the image. In many ways, a fisheye image warped to a cylindrical image appears more like a natural perspective image than a fisheye image warped to a perspective image. A cylindrical image could theoretically be created by rotating a pinhole camera and capturing one column of pixels at a time. Straight vertical lines in 3D appear as straight vertical lines in the cylindrical image. The horizon appears as a straight horizontal line, but all horizontal lines other that the horizon behave differently.
+Warping a fisheye image to a cylindrical image does not cause the problems that arise when trying to warp a fisheye image to a perspective image. A cylindrical image is able to capture a FoV of over \$180^\\circ\$ (nothing special happens at a viewing angle of \$90^\\circ\$), there are no blurs or artifacts, and no drastic changes in the relative area occupied by objects in the image. In many ways, a fisheye image warped to a cylindrical image appears more like a natural perspective image than a fisheye image warped to a perspective image. A cylindrical image could theoretically be created by rotating a pinhole camera and capturing one column of pixels at a time. Straight vertical lines in 3D appear as straight vertical lines in the cylindrical image. The horizon appears as a straight horizontal line, but all horizontal lines other that the horizon behave differently.
 
-Straight horizontal lines in perspective images correspond to curved lines in cylindrical images and straight horizontal lines in cylindrical images correspond to curved lines in cylindrical images.
+Straight horizontal lines in perspective images correspond to curved lines in cylindrical images and straight horizontal lines in cylindrical images correspond to curved lines in perspective images.
 
 Here is a perspective image of the Aqueduct of Segovia in Spain:
 
@@ -335,7 +337,7 @@ When looking at the entire FoV, the geometry in cylindrical images appears defor
 
 In perspective images, there is a translation invariant magnification equal to \$f/Z\$, but this does not apply to cylindrical images.
 
-Is there a translation-invariant magnification in cylindrical images?
+Is there a translation invariant magnification in cylindrical images?
 
 If the object is not too large and not too close to the camera, then its width is approximately the length of an arc:
 \$\$\\Delta X=\\rho\\sin{\\Delta\\varphi}\\approx\\rho\\Delta\\varphi\$\$
@@ -344,10 +346,10 @@ Using this approximation,
 In the vertical direction we need not use any approximation,
 \$\$\\Delta v=\\frac{f_Y}{\\rho}\\Delta Y\$\$
 Let us choose \$f_\\varphi=f_Y=f\$ (we are the ones creating the cylindrical image, so we get to choose its intrinsic matrix), and set the size of the cylindrical image size to correspond to the horizontal and vertical FoV:
-\$\$\\begin{matrix}W=f\\Phi\\\\H=2f\\tan{\\frac{\\Psi}{2}}\\\\\\end{matrix}\$\$ 
+\$\$\\begin{matrix}w=f\\Phi\\\\h=2f\\tan{\\left(\\Psi/2\\right)}\\\\\\end{matrix}\$\$ 
 Thus, using the small angle approximation gives us a magnification equation very similar to the magnification equation for pinhole cameras:
 \$\$\\frac{\\Delta u}{\\Delta X} = \\frac{\\Delta u}{\\Delta Y} = \\frac{f}{\\rho},\$\$
-where instead of the depth \$Z\$ we now have the cylindrical radial distance \$\\rho\$. This means that objects become smaller as they move farther away from the cylinder axis, and larger as they move closer to the cylinder axis. The cylindrical radial distance is the geometrically meaningful measure of distance. An Object can change its \$\varphi\$ and its \$Y\$, and consequently appear shifted in the image, but as long as \$\\rho\$ is preserved it will have a similar appearance and size in the image. There is information in the image about \$\\rho\$, much like there is information about \$Z\$ in a perspective image. Therefore, in cylindrical images it makes sense to regress the \$\\rho\$ of a 3D bounding box center instead of its \$Z\$.
+where instead of the depth \$Z\$ we now have the cylindrical radial distance \$\\rho\$. This means that objects become smaller as they move farther away from the cylinder axis, and larger as they move closer to the cylinder axis. The cylindrical radial distance is the geometrically meaningful measure of distance. An object can change its \$\varphi\$ and its \$Y\$, and consequently appear shifted in the image, but as long as \$\\rho\$ is preserved it will have a similar appearance and size in the image. There is information in the image about \$\\rho\$, much like there is information about \$Z\$ in a perspective image. Therefore, in cylindrical images it makes sense to regress the \$\\rho\$ of a 3D bounding box center instead of its \$Z\$.
 
 ### Training a monocular 3D object detector on cylindrical images
 There exist many monocular 3D object detectors which were designed for perspective images (e.g., [CenterNet](https://arxiv.org/abs/1904.07850), [MonoDIS](https://openaccess.thecvf.com/content_ICCV_2019/html/Simonelli_Disentangling_Monocular_3D_Object_Detection_ICCV_2019_paper.html), [FCOS3D](https://openaccess.thecvf.com/content/ICCV2021W/3DODI/html/Wang_FCOS3D_Fully_Convolutional_One-Stage_Monocular_3D_Object_Detection_ICCVW_2021_paper.html)). These detectors regress the following 3D bounding box parameters (or variations of them):
