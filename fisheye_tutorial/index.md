@@ -345,3 +345,21 @@ Thus, using the small angle approximation gives us a magnification equation very
 where instead of the depth \$Z\$ we now have the cylindrical radial distance \$\\rho\$. This means that objects become smaller as they move farther away from the cylinder axis, and larger as they move closer to the cylinder axis. The cylindrical radial distance is the geometrically meaningful measure of distance. An Object can change its \$\varphi\$ and its \$Y\$, and consequently appear shifted in the image, but as long as \$\\rho\$ is preserved it will have a similar appearance and size in the image. There is information in the image about \$\\rho\$, much like there is information about \$Z\$ in a perspective image. Therefore, in cylindrical images it makes sense to regress the \$\\rho\$ of a 3D bounding box center instead of its \$Z\$.
 
 ### Training a monocular 3D object detector on cylindrical images
+There exist many monocular 3D object detectors which were designed for perspective images (e.g., [CenterNet](https://arxiv.org/abs/1904.07850), [MonoDIS](https://openaccess.thecvf.com/content_ICCV_2019/html/Simonelli_Disentangling_Monocular_3D_Object_Detection_ICCV_2019_paper.html), [FCOS3D](https://openaccess.thecvf.com/content/ICCV2021W/3DODI/html/Wang_FCOS3D_Fully_Convolutional_One-Stage_Monocular_3D_Object_Detection_ICCVW_2021_paper.html)). These detectors regress the following 3D bounding box parameters (or variations of them):
+\$\$u, v, W, H, L, q, Z\$\$
+During inference, the camera calibration is used (with the perspective projection) to lift the predicted values to a 3D bounding box.
+
+To adapt such a model to cylindrical images, we must make two modifications.
+
+First, when lifting the 3D bounding box from parameters, we must use the cylindrical projection instead of the perspective projection: we compute the ray pointing towards the object by multiplying the homogenous coordinates of a 2D keypoint by the inverse cylindrical intrinsic matrix, remembering that this gives the directional vector in cylindrical coordinates rather than Cartesian coordinates.
+
+Second, during training, we should regress \$\\rho\$ instead of \$Z\$. All other outputs remain unchanged: the 2D keypoint \$\\left[u, v\\right]\$, the 3D dimensions \$(W, H, L)\$ and the local orientation \$q\$ need not be changed. The learned 3D bounding box parameters are thus
+\$\$u, v, W, H, L, q, \\rho.\$\$
+During inference, we scale the directional vector in cylindrical coordinates such that its cylindrical radial distance is equal to the predicted \$\\rho\$ in order to find the location of the 3D bounding box.
+
+Notice that even though the local orientation is predicted the same way as it was for perspective images, recovering the global orientation from it requires another modification. The global yaw \$\\beta\$ is related to the local yaw \$\\beta_{local}\$ (the angle which the CNN predicts) by
+\$\$\\beta=\\beta_{local}+\\varphi\$\$
+where \$\\varphi\$ is the azimuth of the ray pointing towards the object. In perspective images,
+\$\$\\varphi=\\text{atan}\\left(\\frac{u-u_0}{f}\\right)\$\$
+In cylindrical images,
+\$\$\\varphi=\\frac{u-u_0}{f}\$\$
