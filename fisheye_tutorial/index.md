@@ -324,3 +324,24 @@ Here is a cylindrical image of the same Colosseum:
 > Photo by Jaakko Luttinen ([CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/deed.en))
 
 To a human used to seeing perspective images, in the cylindrical image the Colosseum looks as if it were straight, perhaps similar to the perspective image of the Aqueduct of Segovia.
+
+### A magnification equation for cylindrical images
+When looking at the entire FoV, the geometry in cylindrical images appears deformed compared to what we are used to, yet the objects (people, cars, buses) look normal, and we can even imagine how when they are larger they must be closer to the camera and when they are smaller they must be farther away.
+
+In perspective images, there is a translation invariant magnification equal to \$f/Z\$, but this does not apply to cylindrical images.
+
+Is there a translation-invariant magnification in cylindrical images?
+
+If the object is not too large and not too close to the camera, then its width is approximately the length of an arc:
+\$\$\\Delta X=\\rho\\sin{\\Delta\\varphi}\\approx\\rho\\Delta\\varphi\$\$
+Using this approximation,
+\$\$\\Delta u = f_\\varphi \\Delta \\varphi \\approx \\frac{f_\\varphi}{\\rho}\\Delta X\$\$
+In the vertical direction we need not use any approximation,
+\$\$\\Delta v=\\frac{f_Y}{\\rho}\\Delta Y\$\$
+Let us choose \$f_\\varphi=f_Y=f\$ (we are the ones creating the cylindrical image, so we get to choose its intrinsic matrix), and set the size of the cylindrical image size to correspond to the horizontal and vertical FoV:
+\$\$\\begin{matrix}W=f\\Phi\\\\H=2f\\tan{\\frac{\\Psi}{2}}\\\\\\end{matrix}\$\$ 
+Thus, using the small angle approximation gives us a magnification equation very similar to the magnification equation for pinhole cameras:
+\$\$\\frac{\\Delta u}{\\Delta X} = \\frac{\\Delta u}{\\Delta Y} = \\frac{f}{\\rho},\$\$
+where instead of the depth \$Z\$ we now have the cylindrical radial distance \$\\rho\$. This means that objects become smaller as they move farther away from the cylinder axis, and larger as they move closer to the cylinder axis. The cylindrical radial distance is the geometrically meaningful measure of distance. An Object can change its \$\varphi\$ and its \$Y\$, and consequently appear shifted in the image, but as long as \$\\rho\$ is preserved it will have a similar appearance and size in the image. There is information in the image about \$\\rho\$, much like there is information about \$Z\$ in a perspective image. Therefore, in cylindrical images it makes sense to regress the \$\\rho\$ of a 3D bounding box center instead of its \$Z\$.
+
+### Training a monocular 3D object detector on cylindrical images
