@@ -448,3 +448,7 @@ In upright coordinates, the optical axis of the camera is:
 \$\$r=\\left[\\begin{matrix}R_{00}&R_{01}&R_{02}\\\\R_{10}&R_{11}&R_{12}\\\\R_{20}&R_{21}&R_{22}\\\\\\end{matrix}\\right]\\left[\\begin{matrix}0\\\\0\\\\1\\\\\\end{matrix}\\right]=\\left[\\begin{matrix}R_{02}\\\\R_{12}\\\\R_{22}\\\\\\end{matrix}\\right]\$\$
 By removing the y component, we get a vector pointing in the azimuthal direction of the camera, but parallel to the ground:
 \$\$r_\\bot=\\left[\\begin{matrix}R_{02}\\\\0\\\\R_{22}\\\\\\end{matrix}\\right]\$\$
+
+![](img/axes.png)
+
+The angle between this vector and the optical axis of the upright cylinder is
