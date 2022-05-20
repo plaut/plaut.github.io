@@ -163,7 +163,7 @@ This is the same image from New York City after warping:
 
 In the upright view, objects are aligned to the ground plane and have zero pitch and zero roll, their translation invariance is for movements parallel to the ground, the 2D bounding boxes aligned to the pixel grid are tight, and 3D bounding box parameter predictions are independent of intrinsic or extrinsic calibration.
 
-The mapping between a 3D point in (tilted) camera coordinates \$P\$ and the homogenous pixel coordinates in the warped image \${p^{\\prime\\prime}\$ now includes an extrinsic rotation,
+The mapping between a 3D point in (tilted) camera coordinates \$P\$ and the homogenous pixel coordinates in the warped image \$p^{\\prime\\prime}\$ now includes an extrinsic rotation,
 \$\$p^{\\prime\\prime} Z=KRP,\$\$
 where \$R\$ is the rotation matrix from the physical (tilted) camera to the upright coordinate frame parallel to the ground.
 
