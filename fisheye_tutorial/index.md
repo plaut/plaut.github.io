@@ -419,3 +419,32 @@ In order to overcome failure in the yaw prediction of large and near objects, we
 Perspective images can still be useful for pretraining the model, as we often have a large training set of perspective images and would like to only finetune a model on a small training set of fisheye images.
 
 Another option is to train a joint model on a union of perspective images and fisheye images. During training, when we train on a sample or a batch from a perspective camera, we use the ground truth annotations as usual, and when we train on a sample or a batch from a fisheye camera warped to the cylindrical projection, we use the imaginary object as the ground truth. During inference, when processing an image from a perspective camera we lift the 3D bounding box the usual way, and when processing a cylindrical image from a fisheye camera we lift it using the post-processing transformation from the imaginary object which would create the image if it were a perspective projection to the real object.
+
+### Extrinsic rotation
+Earlier, we mentioned that fisheye cameras are often installed tilted slightly downwards towards the ground. If we warp the fisheye image to a cylindrical image with the same optical axis, the warped image will not be practical:
+
+![](img/woodscape9.png)
+
+This is because objects tend to be parallel to the ground, and the cylindrical image surface is tilted relative to the ground:
+
+![](img/cylindrical_tilt.png)
+
+When a cylindrical image is tilted, it does not enjoy the advantages which motivated us to use it in the first place. Hence, we apply a virtual rotation to simulate an upright view, i.e., project the 3D scene onto an upright cylinder even when the physical fisheye camera is tilted.
+
+When warping a fisheye image to a cylindrical image, we compute the inverse pixel mapping. We start from pixel coordinates assumed to have come from the upright cylindrical image, and multiply the homogeneous coordinates of each pixel by the inverse cylindrical intrinsic matrix. This gives us the cylindrical coordinates of its corresponding ray (normalized to \$\\rho=1\$):
+\$\${\\left[\\begin{matrix}\\varphi\\\\Y\\\\1\\\\\\end{matrix}\\right]=\\left[\\begin{matrix}f&0&u_0\\\\0&f&v_0\\\\0&0&1\\\\\\end{matrix}\\right]}^{-1}\\left[\\begin{matrix}u\\\\v\\\\1\\\\\\end{matrix}\\right]\$\$
+We convert the cylindrical coordinates to Cartesian coordinates:
+\$\$\\left[\\begin{matrix}X\\\\Y\\\\Z\\\\\\end{matrix}\\right]=\\left[\\begin{matrix}\\rho\\sin{\\varphi}\\\\Y\\\\\\rho\\cos{\\varphi}\\\\\\end{matrix}\\right]=\\left[\\begin{matrix}\\sin{\\varphi}\\\\Y\\\\\\cos{\\varphi}\\\\\\end{matrix}\\right]\$\$
+
+Before projecting the ray onto the fisheye image using the fisheye camera model, we add an additional step: we rotate the ray by multiplying it with the matrix representing the rotation from the upright view to the tilted camera.
+
+How do we find the extrinsic matrix? Often we have the calibrated transformation between the tilted fisheye camera’s coordinate frame and some upright coordinate frame, such as the vehicle coordinate frame (associated with a localization sensor), or some other sensor such as a Lidar or an upright front-facing perspective camera. We can use this transformation. Beware - such transformations often hide in the rotation matrix a change in the signs of the \$x-y-z\$ axes (e.g., between the right-down-front system we have been using and a front-left-up system), which we must cancel out.
+
+Fisheye cameras are often used for surround view, and a popular choice is to install four cameras facing different directions: front, back, left and right. We would like the optical axis of the cylinder to be parallel to the ground, but in the same viewing direction as the camera. After rotating the cylinder according to the transformation from tilted fisheye camera to upright vehicle, we should rotate it around the new \$y\$ axis (perpendicular to the ground) by some azimuth angle. We will now find that angle.
+
+We write the rotation matrix from the upright coordinate frame to the rotated camera explicitly as
+\$\$R=\\left[\\begin{matrix}R_{00}&R_{01}&R_{02}\\\\R_{10}&R_{11}&R_{12}\\\\R_{20}&R_{21}&R_{22}\\\\\\end{matrix}\\right]\$\$
+In upright coordinates, the optical axis of the camera is:
+\$\$r=\\left[\\begin{matrix}R_{00}&R_{01}&R_{02}\\\\R_{10}&R_{11}&R_{12}\\\\R_{20}&R_{21}&R_{22}\\\\\\end{matrix}\\right]\\left[\\begin{matrix}0\\\\0\\\\1\\\\\\end{matrix}\\right]=\\left[\\begin{matrix}R_{02}\\\\R_{12}\\\\R_{22}\\\\\\end{matrix}\\right]\$\$
+By removing the y component, we get a vector pointing in the azimuthal direction of the camera, but parallel to the ground:
+\$\$r_\\bot=\\left[\\begin{matrix}R_{02}\\\\0\\\\R_{22}\\\\\\end{matrix}\\right]\$\$
