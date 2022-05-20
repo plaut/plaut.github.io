@@ -452,3 +452,33 @@ By removing the y component, we get a vector pointing in the azimuthal direction
 ![](img/axes.png)
 
 The angle between this vector and the optical axis of the upright cylinder is
+\$\$\\phi = \\frac{1}{\\Vert \\begin{matrix} R_{02}&&0&&R_{22} \\end{matrix} \\Vert} \\text{acos} \\left( \\left[\\begin{matrix}0&&0&&1\\end{matrix}\\right] \\left[\\begin{matrix}R_{02}\\\\0\\\\R_{22}\\end{matrix}\\right] \\right) = \\text{acos}\\left(\\frac{R_{22}}{\\sqrt{R_{02}^2+R_{22}^2}}\\right)\$\$
+
+The extrinsic rotation matrix we should use is:
+\$\$RR_y\\left(-\\phi\\right)=\\left[\\begin{matrix}R_{00}&R_{01}&R_{02}\\\\R_{10}&R_{11}&R_{12}\\\\R_{20}&R_{21}&R_{22}\\\\\\end{matrix}\\right]\\left[\\begin{matrix}\\cos{\\phi}&0&-\\sin{\\phi}\\\\0&1&0\\\\\\sin{\\phi}&0&\\cos{\\phi}\\\\\\end{matrix}\\right]\$\$
+
+Applying this extrinsic rotation produces the following cylindrical image:
+
+![](img/woodscape10.png)
+
+This cylindrical image simulates an upright view, but the top part of it is empty. We should update the principal point to simulate a vertical shift of the image.
+How do we find an appropriate principal point? The vertical shift in pixel coordinates is related to the elevation angle of the tilt \$\\tau\$ by
+
+\$\$\\Delta v=-f\\tan{\\left(\\tau\\right)}\$\$
+
+where \$f\$ is the focal length associated with the cylindrical image. The tilt angle \$\\tau\$ is the angle between \$r\$, the optical axis in the upright coordinate frame, and \$r_\\bot\$, the vector parallel to the ground which we computed previously.
+
+\$\$\\phi = \\frac{1}{\\Vert \\begin{matrix} R_{02}&&0&&R_{22} \\end{matrix} \\Vert} \\text{acos} \\left( \\left[\\begin{matrix}R_{02}&&0&&R_{22}\\end{matrix}\\right] \\left[\\begin{matrix}R_{02}\\\\R_{12}\\\\R_{22}\\end{matrix}\\right] \\right) = \\text{acos}\\left(\\sqrt{R_{02}^2+R_{22}^2}\\right)\$\$
+
+Using the trigonometric identity for \$\\tan{\\left(\\text{acos}\\tau\\right)}\$, the vertical shift is
+
+\$\$\\Delta v=-f\\tan{\\left(\\tau\\right)}=-f\\sqrt{\\frac{1}{R_{02}^2+R_{22}^2}-1}\$\$
+
+The new principal point is
+\$\$\\left(\\begin{matrix}u_0,&v_0\\\\\\end{matrix}-f\\sqrt{\\frac{1}{R_{02}^2+R_{22}^2}-1}\\right)\$\$
+
+Warping the fisheye image to a cylindrical image with this updated principal point produces the following image:
+
+![](img/woodscape9.png)
+
+This is the image we showed earlier when we first introduced the fisheye to cylindrical warping, without mentioning the tilt correction.
