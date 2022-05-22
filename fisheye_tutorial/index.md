@@ -352,23 +352,25 @@ Thus, using the small angle approximation gives us a magnification equation very
 where instead of the depth \$Z\$ we now have the cylindrical radial distance \$\\rho\$. This means that objects become smaller as they move farther away from the cylinder axis, and larger as they move closer to the cylinder axis. The cylindrical radial distance is the geometrically meaningful measure of distance. An object can change its \$\varphi\$ and its \$Y\$, and consequently appear shifted in the image, but as long as \$\\rho\$ is preserved it will have a similar appearance and size in the image. There is information in the image about \$\\rho\$, much like there is information about \$Z\$ in a perspective image. Therefore, in cylindrical images it makes sense to regress the \$\\rho\$ of a 3D bounding box center instead of its \$Z\$.
 
 ### Training a monocular 3D object detector on cylindrical images
-There exist many monocular 3D object detectors which were designed for perspective images (e.g., [CenterNet](https://arxiv.org/abs/1904.07850), [MonoDIS](https://openaccess.thecvf.com/content_ICCV_2019/html/Simonelli_Disentangling_Monocular_3D_Object_Detection_ICCV_2019_paper.html), [FCOS3D](https://openaccess.thecvf.com/content/ICCV2021W/3DODI/html/Wang_FCOS3D_Fully_Convolutional_One-Stage_Monocular_3D_Object_Detection_ICCVW_2021_paper.html)). These detectors regress the following 3D bounding box parameters (or variations of them):
+There exist many monocular 3D object detectors which were designed for perspective images (e.g., [CenterNet](https://arxiv.org/abs/1904.07850), [MonoDIS](https://openaccess.thecvf.com/content_ICCV_2019/html/Simonelli_Disentangling_Monocular_3D_Object_Detection_ICCV_2019_paper.html), [FCOS3D](https://openaccess.thecvf.com/content/ICCV2021W/3DODI/html/Wang_FCOS3D_Fully_Convolutional_One-Stage_Monocular_3D_Object_Detection_ICCVW_2021_paper.html)). These detectors typically regress the following 3D bounding box parameters (or variations of them):
 \$\$u, v, W, H, L, q, Z\$\$
 During inference, the camera calibration is used (with the perspective projection) to lift the predicted values to a 3D bounding box.
 
 To adapt such a model to cylindrical images, we must make two modifications.
 
-First, when lifting the 3D bounding box from parameters, we must use the cylindrical projection instead of the perspective projection: we compute the ray pointing towards the object by multiplying the homogenous coordinates of a 2D keypoint by the inverse cylindrical intrinsic matrix, remembering that this gives the directional vector in cylindrical coordinates rather than Cartesian coordinates.
+First, when lifting the 3D bounding box from parameters, we must use the cylindrical projection instead of the perspective projection: we compute the ray pointing towards the object by multiplying \$\\left[u,v,1\\right]\$ by the inverse cylindrical intrinsic matrix, remembering that this gives the directional vector in cylindrical coordinates rather than Cartesian coordinates, with \$\\rho=1\$.
 
 Second, during training, we should regress \$\\rho\$ instead of \$Z\$. All other outputs remain unchanged: the 2D keypoint \$\\left[u, v\\right]\$, the 3D dimensions \$(W, H, L)\$ and the local orientation \$q\$ need not be changed. The learned 3D bounding box parameters are thus
 \$\$u, v, W, H, L, q, \\rho.\$\$
-During inference, we scale the directional vector in cylindrical coordinates such that its cylindrical radial distance is equal to the predicted \$\\rho\$ in order to find the location of the 3D bounding box.
+During inference, we find the location of the 3D bounding box by multiplying the directional vector, which has been normalized to \$\\rho=1\$, by the predicted \$\\rho\$.
+
+In the same way we used a normalized \$Z/f\$ instead of \$Z\$ for generalization between perspective cameras, we can use \$\\rho/f\$ instead of \$\\rho\$ for generalization between cylindrical images. 
 
 Notice that even though the local orientation is predicted the same way as it was for perspective images, recovering the global orientation from it requires another modification. The global yaw \$\\beta\$ is related to the local yaw \$\\beta_{local}\$ (the angle which the CNN predicts) by
 \$\$\\beta=\\beta_{local}+\\varphi\$\$
 where \$\\varphi\$ is the azimuth of the ray pointing towards the object. In perspective images,
-\$\$\\varphi=\\text{atan}\\left(\\frac{u-u_0}{f}\\right)\$\$
-In cylindrical images,
+\$\$\\varphi=\\text{atan}\\left(\\frac{u-u_0}{f}\\right),\$\$
+whereas in cylindrical images,
 \$\$\\varphi=\\frac{u-u_0}{f}\$\$
 
 ### Training on perspective images and testing on cylindrical images
@@ -376,11 +378,7 @@ What will happen if we take an existing monocular 3D object detector that was de
 
 Such a model, to which we have made no adaptations to the cylindrical projection and which has not seen any cylindrical images during training, will process the cylindrical image as if it were a perspective image. It suffers from the same optical illusion we experienced with the cylindrical image of the Colosseum in Rome, as if the walls of the Colosseum had a constant \$Z\$, even though in 3D space they have a constant \$\\rho\$.
 
-The monocular 3D object detector then outputs the 3D bounding boxes which correspond to an imaginary 3D scene which would create the image if it were captured by a pinhole camera.
-
-Using the small angle approximation, we find the transformation from the imaginary 3D bounding box parameters to the parameters of the 3D bounding box around the real object.
-
-The detector predicts a 3D bounding box of an imaginary object at location \$\\left[\\begin{matrix}\\widetilde{X}&\\widetilde{Y}&\\widetilde{Z}\\\\\\end{matrix}\\right]\$, and we know this vector corresponds to cylindrical coordinates of the real object:
+The monocular 3D object detector outputs the 3D bounding boxes which correspond to a virtual 3D scene which would create the image if it were captured by a pinhole camera. It predicts a 3D bounding box of a virtual object at location \$\\left[\\begin{matrix}\\widetilde{X}&\\widetilde{Y}&\\widetilde{Z}\\\\\\end{matrix}\\right]\$, and we know this vector corresponds to the cylindrical coordinates of the real object:
 \$\$\\left[\\begin{matrix}\\widetilde{X}\\\\\\widetilde{Y}\\\\\\widetilde{Z}\\\\\\end{matrix}\\right]=\\left[\\begin{matrix}\\rho\\varphi\\\\Y\\\\\\rho\\\\\\end{matrix}\\right]=\\left[\\begin{matrix}\\sqrt{X^2+Z^2}\\text{atan2}{\\left(X,Z\\right)}\\\\Y\\\\\\sqrt{X^2+Z^2}\\\\\\end{matrix}\\right]\$\$
 The location of the real 3D bounding box in Cartesian coordinates is
 \$\$\\left[\\begin{matrix}X\\\\Y\\\\Z\\\\\\end{matrix}\\right]=\\left[\\begin{matrix}\\rho\\sin{\\varphi}\\\\\\widetilde{Y}\\\\\\rho\\cos{\\varphi}\\\\\\end{matrix}\\right]=\\left[\\begin{matrix}\\widetilde{Z}\\sin{\\left(\\widetilde{X}/\\widetilde{Z}\\right)}\\\\\\widetilde{Y}\\\\\\widetilde{Z}\\cos{\\left(\\widetilde{X}/\\widetilde{Z}\\right)}\\\\\\end{matrix}\\right]\$\$
@@ -395,13 +393,13 @@ Thus, to recover the 3D bounding box of an object in a cylindrical image using a
 
 The global yaw \$\\beta\$ is related to the local yaw \beta_{local} (the angle which the CNN predicts) by
 \$\$\\beta=\\beta_{local}+\\varphi=\\beta_{local}+\\tan{\\widetilde{\\varphi}}\$\$
-The following figure illustrates the relationship between the imaginary object and the real object:
+The following figure illustrates the relationship between the virtual object and the real object:
 
 ![](img/Virtual.png)
 
-The depth \$\widetilde{Z}\$ to the imaginary object is actually the cylindrical radial distance \rho to the real object, and the azimuth of the ray pointing towards the object is changed by applying the tangent function.
+The depth \$\widetilde{Z}\$ to the virtual object is actually the cylindrical radial distance \rho to the real object, and the azimuth of the ray pointing towards the object is changed by applying the tangent function.
 
-When creating the cylindrical image, we choose its size such that its intrinsic matrix is identical to that of the perspective camera used during training. Alternatively, we can normalize the depth regressed from perspective images to \$Z/f\$ during training, and multiply \$\widetilde{Z}\$ by \$f\$ during inference. When using focal length normalization, all 3D bounding box parameters are camera agnostic, and we can test on cylindrical images with an intrinsic matrix different from the intrinsic matrix of the perspective training images, or train (and test) on a union of multiple datasets with different calibrations.
+When creating the cylindrical image, we chose its size such that its intrinsic matrix is identical to that of the perspective camera used during training (\$f_\\varphi=f_Y=f\$). Alternatively, we can normalize the depth regressed from perspective images to \$Z/f\$ during training, and multiply \$\widetilde{Z}/f\$ by \$f\$ during inference. When using focal length normalization, all 3D bounding box parameters are camera agnostic, and we can test on cylindrical images with an intrinsic matrix different from the intrinsic matrix of the perspective training images, or train (and test) on a union of multiple datasets with different calibrations.
 
 To summarize this method, we take a fisheye image and warp it to a cylindrical image. Then we show it to a standard monocular 3D object detector which was designed for perspective images and was trained only on perspective images (e.g., [CenterNet](https://arxiv.org/abs/1904.07850), [MonoDIS](https://openaccess.thecvf.com/content_ICCV_2019/html/Simonelli_Disentangling_Monocular_3D_Object_Detection_ICCV_2019_paper.html), [FCOS3D](https://openaccess.thecvf.com/content/ICCV2021W/3DODI/html/Wang_FCOS3D_Fully_Convolutional_One-Stage_Monocular_3D_Object_Detection_ICCVW_2021_paper.html), trained on the KITTI dataset). We apply transformations to the outputs as a post processing step, which account for how the predicted \$Z\$ is actually \$\\rho\$ and the ray pointing towards the object is related to the 2D keypoint by the cylindrical projection instead of the perspective projection. The updated azimuth of the ray pointing towards the object is also used to recover the global yaw from the local yaw.
 
@@ -410,7 +408,7 @@ To summarize this method, we take a fisheye image and warp it to a cylindrical i
 More information about this method can be found in the paper:
 ***E. Plaut, E. B. Yaacov, B. E. Shlomo, [3D Object Detection from a Single Fisheye Image Without a Single Fisheye Training Image](https://openaccess.thecvf.com/content/CVPR2021W/OmniCV/html/Plaut_3D_Object_Detection_From_a_Single_Fisheye_Image_Without_a_CVPRW_2021_paper.html), Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), 2021***
 
-#### Failure case and training a model jointly on perspective cameras and fisheye cameras
+#### Failure case
 This method is useful when we want to detect 3D objects from a fisheye camera even though we do not have any training set of fisheye images with 3D bounding box annotations. It works remarkably well as long as the objects are not too large and not too close to the camera.
 
 When an object is large or is close to the camera, the small angle approximation, which leads to the magnification equation equivalent to that of perspective images up to replacement of \$Z\$ by \$\\rho\$, is no longer accurate. Using a standard monocular 3D object detector and interpreting its \$Z\$ output as \$\\rho\$ will be less accurate for such objects.
@@ -421,11 +419,12 @@ Wrose yet, such objects look deformed: a cube in 3D appears to have the shape of
 
 This car looks like it is facing towards the right and slightly away from the camera according to the front side of the car, but slightly towards the camera according to the back side of the car. A monocular 3D object detector trained only on perspective images has not seen any car like this and would not be able to predict the orientation of the car. Features that the orientation prediction relies on are out of distribution when activated by such an image, and the orientation prediction might be as good as random.
 
+####  Training a model jointly on perspective cameras and fisheye cameras
 In order to overcome failure in the yaw prediction of large and near objects, we must obtain a training set of fisheye images and 3D bounding box annotations and train the detector on it.
 
 Perspective images can still be useful for pretraining the model, as we often have a large training set of perspective images and would like to only finetune a model on a small training set of fisheye images.
 
-Another option is to train a joint model on a union of perspective images and fisheye images. During training, when we train on a sample or a batch from a perspective camera, we use the ground truth annotations as usual, and when we train on a sample or a batch from a fisheye camera warped to the cylindrical projection, we use the imaginary object as the ground truth. During inference, when processing an image from a perspective camera we lift the 3D bounding box the usual way, and when processing a cylindrical image from a fisheye camera we lift it using the post-processing transformation from the imaginary object which would create the image if it were a perspective projection to the real object.
+Another option is to train a joint model on a union of perspective images and fisheye images. During training, when we train on a sample or a batch from a perspective camera, we use the ground truth annotations as usual; when we train on a sample or a batch from a fisheye camera warped to the cylindrical projection, we use the virtual object which would create the image if it were a perspective projection as the ground truth. During inference, when processing an image from a perspective camera we lift the 3D bounding box the usual way, and when processing a cylindrical image from a fisheye camera we lift it using the post-processing transformation from the virtual object to the real object.
 
 ### Extrinsic rotation
 Earlier, we mentioned that fisheye cameras are often installed tilted slightly downwards towards the ground. If we warp the fisheye image to a cylindrical image with the same optical axis, the warped image will not be practical:
