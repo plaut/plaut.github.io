@@ -505,7 +505,7 @@ Right:
 
 There is no reason not to train a single CNN on data from all four cameras jointly.
 
-In order to project a 3D point in fisheye camera coordinates, \$P=\\left[\\begin{matrix}X&&Y&&Z\\end{matrix}\\right],\$ onto the upright cylindrical image, we must use not only the intrinsic matrix but also the extrinsic rotation \$R_{\\tau}\$. First, we rotate \$P\$ by \$R_{\\tau}\$ by computing \$R_{\\tau}P\$. Then we convert the rotated vector to cylindrical coordinates and normalize it to \$\\rho=1\$. Then we multiply the cylindrical coordinates by the cylindrical intrinsic matrix.
+In order to project a 3D point in fisheye camera coordinates, \$P=\\left[X, Y, Z\\right],\$ onto the upright cylindrical image, we must use not only the intrinsic matrix but also the extrinsic rotation \$R_{\\tau}\$. First, we rotate \$P\$ by \$R_{\\tau}\$ by computing \$R_{\\tau}P\$. Then we convert the rotated vector to cylindrical coordinates and normalize it to \$\\rho=1\$. Then we multiply the cylindrical coordinates by the cylindrical intrinsic matrix.
 
 When computing the ray associated with a 2D keypoint in the cylindrical image, we multiply the homogeneous coordinates of the keypoint by the inverse intrinsic matrix, then convert from cylindrical coordinates to cartesian coordinates, and then rotate by the inverse extrinsic rotation matrix \$R_{\\tau}^{-1}=R_{\\tau}^T\$.
 
