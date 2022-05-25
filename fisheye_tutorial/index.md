@@ -487,7 +487,7 @@ The tilt angle \$\\tau\$ is the angle between \$r\$, the optical axis of the til
 \$\$\\tau = -\\frac{1}{\\Vert \\begin{matrix} R_{02}&&0&&R_{22} \\end{matrix} \\Vert} \\text{acos} \\left( \\left[\\begin{matrix}R_{02}&&0&&R_{22}\\end{matrix}\\right] \\left[\\begin{matrix}R_{02}\\\\R_{12}\\\\R_{22}\\end{matrix}\\right] \\right) = -\\text{acos}\\left(\\sqrt{R_{02}^2+R_{22}^2}\\right)\$\$
 
 The new principal point is
-\$\$\\left[u_0, v_0\\right]=\\left[\\frac{w}{2}, \\frac{h}{2}\\right]=\\left[f\\frac{\\Phi}{2}, f\\tan\\left(\\frac{\\Psi}{2}-\\text{acos}\\left(\\sqrt{R_{02}^2+R_{22}^2}\\right)\\right)\\right]\$\$
+\$\$\\left[u_0, v_0\\right]=\\left[f\\frac{\\Phi}{2}, f\\tan\\left(\\frac{\\Psi}{2}-\\text{acos}\\left(\\sqrt{R_{02}^2+R_{22}^2}\\right)\\right)\\right]\$\$
 
 Warping the fisheye image to a cylindrical image with this updated principal point produces the following image:
 
