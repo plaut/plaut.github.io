@@ -91,11 +91,11 @@ What if we had a huge dataset of road images like [KITTI](http://www.cvlibs.net/
 
 Now, why do we expect a neural network to predict the 3D position of objects from an image that is 2D? Where is the 3D information coming from? The answer is that an image from a camera is not just any 2D array of pixels. It is created from a 3D scene using the perspective projection.
 
-One of the properties of the perspective projection is that objects become smaller as they move farther away from the camera and larger as they move closer to the camera. The ratio between the 3D size of the object and its 2D size in the image, known as the magnification, is equal to the focal length divided by the distance along the optical axis \$Z\$, referred to as the depth:
+One of the properties of the perspective projection is that objects become smaller as they move farther away from the camera and larger as they move closer to the camera. The ratio between the 3D size of the object and its 2D size in the image, known as the magnification, is equal to the focal length divided by the depth:
 \$\$\\frac{\\Delta u}{\\Delta X}=\\frac{\\Delta v}{\\Delta Y}=\\frac{f}{Z}\$\$
 This is easy to derive directly from the projection equation.
 
-Detecting a 2D bounding box around the object is not a difficult task for a CNN, and the focal length is assumed to be known. The unknowns in this equation are the 3D size of the object and its depth. Thus, there is an ambiguity between objects that are small and near the camera and objects that are large and distant from the camera.
+Detecting a 2D bounding box around the object is not a difficult task for a CNN, and the focal length is assumed to be known. The unknowns in this equation are the 3D size of the object and its depth. Thus, there is an ambiguity between objects that are small and near the camera and objects that are large and distant from the camera, where the distance is measured along the \$z\$ axis.
 
 If we are trying to detect objects that can come in any size without any correlation between their 3D size and what they look like (e.g., clouds in the sky), it might not be possible to break this ambiguity. But if we are trying to detect objects of categories that have characteristic dimensions, such as cars, then it is possible to train a CNN to predict the 3D size from what the object looks like in the image.
 
@@ -111,7 +111,7 @@ Notice how the seats appear smaller in the image as \$Z\$ increases, but seats i
 
 If we train a CNN to predict the Euclidean distance, we are forcing it to learn, in addition to the cues about \$Z\$, the horizontal and vertical coordinates. This is incompatible with the translation invariant nature of CNNs.
 
-For a similar reason, we never train a monocular 3D object detector to regress the [global yaw](https://towardsdatascience.com/orientation-estimation-in-monocular-3d-object-detection-f850ace91411) of the object. An object with a fixed yaw changes its appearance in the image as its position changes, so by training a CNN to predict the global yaw directly we would be forcing it to memorize a mapping that is a function of the pixel coordinates. The local yaw, also known as the *allocentric yaw* or *observation angle*, is approximately translation invariant in that an object with a fixed local yaw has a similar appearance in the image regardless of where it is in the image. Practically every published monocular 3D object detector regresses the local yaw.
+For a similar reason, we never train a monocular 3D object detector to regress the [global yaw](https://towardsdatascience.com/orientation-estimation-in-monocular-3d-object-detection-f850ace91411) of the object. An object with a fixed yaw changes its appearance in the image as its position changes, so by training a CNN to predict the global yaw directly we would be forcing it to memorize a mapping that is a function of the pixel coordinates. The local yaw, also known as the *allocentric yaw* or *observation angle*, is approximately translation invariant in that an object with a fixed local yaw has a similar appearance in the image regardless of where it is in the image. In road scenes, we often assume pure yaw, and the difference between the global yaw and the local yaw is the azimuth angle of the ray pointing towards the object. Practically every published monocular 3D object detector regresses the local orientation rather than the global orientation.
 
 In the past, it was believed that CNNs are completely translation invariant and that it is impossible for them to regress any spatial information (see [CoordConvs](https://proceedings.neurips.cc/paper/2018/hash/60106888f8977b71e1f15db7bc9a88d1-Abstract.html)), but recent papers have shown this to be false (see [here](http://openaccess.thecvf.com/content_CVPR_2020/html/Kayhan_On_Translation_Invariance_in_CNNs_Convolutional_Layers_Can_Exploit_Absolute_CVPR_2020_paper.html) and [here](https://arxiv.org/abs/2001.08248)): if the network is deep enough, then the zero-padding used in convolution layers breaks the translation invariance and allows networks to learn to output coordinates or coordinate-dependent predictions. Despite this, predicting coordinates will always have some error; therefore, regressing the Euclidean distance will always be less accurate than regressing the depth \$Z\$, and regressing the global yaw will always be less accurate than regressing the local yaw. 
 
@@ -126,7 +126,7 @@ During inference, we use the intrinsic camera calibration \$({f,u}_0, v_0)\$ to 
 
 What happens if during testing we have a new camera with a different calibration? The parameters \$(u, v, W, H, L, q)\$ correspond to visual cues that are not significantly affected by the focal length and principal point, and all we must do is use the new camera calibration when lifting the parameters to a 3D bounding box. Therefore, their prediction can be considered camera agnostic. Yet, the depth \$Z\$ is closely related to the focal length by the magnification equation – it is definitely not camera agnostic.
 
-When we train a CNN to predict \$Z\$, the CNN implicitly learns to compute \$f\\frac{\\Delta X}{\\Delta u}\$ and \$f\\frac{\\Delta Y}{\\Delta v}\$. There are visual cues in the image for \$\\Delta X,\\Delta Y,\\Delta u,\\Delta v\$, but not for \$f\$. The only way a CNN can learn to predict \$Z\$ from examples is to also learn \$f\$ and to store it somehow in the network weights.
+When we train a CNN to predict \$Z\$, the CNN implicitly learns to compute \$f\\frac{\\Delta X}{\\Delta u}\$ and \$f\\frac{\\Delta Y}{\\Delta v}\$. There are visual cues in the image for \$\\Delta X,\\Delta Y,\\Delta u,\\Delta v\$, but not for \$f\$. The only way a CNN can learn to predict \$Z\$ from examples is to also learn the constant \$f\$ and to store it somehow in the network weights.
 
 By training the network to predict \$Z/f\$ instead of \$Z\$, the depth prediction becomes camera agnostic. Inverting the magnification equation,
 \$\$\\frac{Z}{f}=\\frac{\\Delta X}{\\Delta u}=\\frac{\\Delta Y}{\\Delta v}.\$\$
@@ -151,7 +151,7 @@ The optical axis is tilted slightly upwards, and as a result the buildings, whic
 
 This has several disadvantages: it does not fit well with the translation invariance property of CNNs, forcing a monocular 3D detector to implicitly learn the pixel coordinates, store the intrinsic calibration and the camera tilt in an uninterpretable way, and consequently does not generalize well to a camera with a different intrinsic calibration or a different tilt. In addition, cubes in 3D do not correspond to 2D rectangles aligned to the pixel grid, so the 2D bounding boxes around objects do not tightly enclose them.
 
-If the camera has a tilt and we cannot physically rotate it to be upright, we can apply a virtual rotation. We use the inverse perspective projection to compute a 3D ray for every pixel, then rotate the ray using the rotation from the tilted camera to an upright coordinate frame parallel to the ground. Then, we use the perspective projection to project the rotated rays to the new image plane. This gives a mapping between the camera pixels and a new image that simulates an upright viewing direction. The [pixel mapping](https://docs.opencv.org/3.4/d1/da0/tutorial_remap.html) is given by
+If the camera has a tilt and we cannot physically rotate it to be upright, we can apply a virtual rotation. We use the inverse perspective projection to compute a 3D ray for every pixel, then rotate the ray using the rotation from the tilted camera to an upright coordinate frame parallel to the ground. Then, we use the perspective projection to project the rotated rays to the new image plane. This gives a [mapping](https://docs.opencv.org/3.4/d1/da0/tutorial_remap.html) between the camera pixels and a new image that simulates an upright viewing direction. The pixel mapping is given by
 \$\$p^{\\prime\\prime}=sKRK^{-1}p^\\prime,\$\$
 where \$p^{\\prime\\prime}\$ denotes the homogeneous pixel coordinates in the warped image simulating an upright view, \$p^\\prime\$ denotes the homogeneous coordinates in the image captured by the tilted camera, \$K\$ is the intrinsic matrix, \$R\$ is the matrix representing the rotation from the tilted camera to the upright coordinate frame parallel to the ground, and \$s\$ is a scalar value set such that the third element of \$p^{\\prime\\prime}\$ is equal to 1.
 
@@ -161,9 +161,9 @@ This is the same image from New York City after warping:
 
 ![](img/nyc_corrected.jpg)
 
-In the upright view, objects are aligned to the ground plane and have zero pitch and zero roll, their translation invariance is for movements parallel to the ground, the 2D bounding boxes aligned to the pixel grid are tight, and 3D bounding box parameter predictions are independent of intrinsic or extrinsic calibration.
+In the upright view, objects are aligned to the ground plane and have zero pitch and zero roll, their translation invariance is for movements parallel to the ground, the 2D bounding boxes aligned to the pixel grid are tight, and 3D bounding box parameter predictions are independent of intrinsic or extrinsic calibration (tilt angle).
 
-The mapping between a 3D point in (tilted) camera coordinates \$P\$ and the homogenous pixel coordinates in the warped image \$p^{\\prime\\prime}\$ now includes an extrinsic rotation,
+The mapping between a 3D point in (tilted) camera coordinates \$P\$ and the homogeneous pixel coordinates in the warped image \$p^{\\prime\\prime}\$ now includes an extrinsic rotation,
 \$\$p^{\\prime\\prime} Z=KRP,\$\$
 where \$R\$ is the rotation matrix from the physical (tilted) camera to the upright coordinate frame parallel to the ground.
 
@@ -174,7 +174,7 @@ Images from fisheye cameras look very different from images captured by perspect
 ![](img/The_Squirrels_0048.jpg)
 >Photo by Josh Berkow and Eric Berkow ([CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/deed.en))
 
-At first glance, this might remind us of what a perspective image with radial distortion looks like. Yet, no undistortion can warp this image to an image that obeys the pinhole camera model. In this image, the horizontal field of view is larger than \$180^\\circ\$. It is impossible for a pinhole camera to capture objects that are behind the camera, i.e., at viewing angles larger than \$90^\\circ\$ from the optical axis. The reason straight lines in 3D look curved in this image is because this image was created using an entirely different projection.
+At first glance, this might remind us of what a perspective image with radial distortion looks like. Yet, no undistortion can fully warp this image to an image that obeys the pinhole camera model. In this image, the horizontal field of view is larger than \$180^\\circ\$. It is impossible for a pinhole camera to capture objects that are behind the camera, i.e., at viewing angles larger than \$90^\\circ\$ from the optical axis. The reason straight lines in 3D look curved in this image is because this image was created using an entirely different projection.
 
 There are various projections that are all referred to as *fisheye*, including equidistant, equisolid, stereographic, and orthographic. We shall use the equidistant fisheye camera model.
 
@@ -191,7 +191,7 @@ In the equidistant fisheye model, the distance between a pixel in the image and 
 
 In the equisolid fisheye projection \$r=2f\\sin{\\frac{\\theta}{2}}\$, in the stereographic fisheye projection \$r=2f\\tan{\\frac{\\theta}{2}}\$, and in the orthographic fisheye projection \$r=f\\sin{\\theta}\$. In all the examples in this tutorial we will use the equidistant fisheye projection, as in the OpenCV model and the WoodScape model.
 
-In OpenCV, distortion is added by replacing \theta in the projection equation by
+In OpenCV, distortion is added by replacing \$\\theta\$ in the projection equation by
 \$\$\\theta_d=\\theta+k_1\\theta^3+k_2\\theta^5+k_3\\theta^7+k_4\\theta^9\$\$
 where the polynomial coefficients \$k_1, k_2, k_3, k_4\$ determine the radial distortion. With distortion,
 \$\$r=f\\theta_d=f\\left(\\theta+k_1\\theta^3+k_2\\theta^5+k_3\\theta^7+k_4\\theta^9\\right).\$\$
