@@ -480,11 +480,11 @@ How do we find an appropriate principal point? When there was no tilt, the princ
 
 For an elevation angle of the tilt \$\\tau\$ we would like
 
-\$\$v_0=f\\tan{\\left(\\frac{\\Psi}{2}+\\tau\\right)}\$\$
+\$\$v_0=f\\tan{\\left(\\frac{\\Psi}{2}-\\tau\\right)}\$\$
 
 The tilt angle \$\\tau\$ is the angle between \$r\$, the optical axis of the tilted camera in the upright coordinate frame, and \$r_\\bot\$, the vector parallel to the ground which we computed previously.
 
-\$\$\\tau = - \\text{acos} \\left(\\frac{1}{\\Vert \\begin{matrix} R_{02}&&0&&R_{22} \\end{matrix} \\Vert} \\left[\\begin{matrix}R_{02}&&0&&R_{22}\\end{matrix}\\right] \\left[\\begin{matrix}R_{02}\\\\R_{12}\\\\R_{22}\\end{matrix}\\right] \\right) = -\\text{acos}\\left(\\sqrt{R_{02}^2+R_{22}^2}\\right)\$\$
+\$\$\\tau = \\text{acos} \\left(\\frac{1}{\\Vert \\begin{matrix} R_{02}&&0&&R_{22} \\end{matrix} \\Vert} \\left[\\begin{matrix}R_{02}&&0&&R_{22}\\end{matrix}\\right] \\left[\\begin{matrix}R_{02}\\\\R_{12}\\\\R_{22}\\end{matrix}\\right] \\right) = \\text{acos}\\left(\\sqrt{R_{02}^2+R_{22}^2}\\right)\$\$
 
 The new principal point is
 \$\$\\left[u_0, v_0\\right]=\\left[f\\frac{\\Phi}{2}, f\\tan\\left(\\frac{\\Psi}{2}-\\text{acos}\\left(\\sqrt{R_{02}^2+R_{22}^2}\\right)\\right)\\right]\$\$
