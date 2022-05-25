@@ -287,7 +287,7 @@ We refer to \$\\rho\$ as the cylindrical radial distance and to \$\\varphi\$ as 
 Compare the equation above to the perspective projection. Here too there is an intrinsic matrix which applies only scaling and translation. The difference is that here the intrinsic matrix multiplies a 3D point given in cylindrical coordinates rather than Cartesian coordinates.
 
 \$f_\\varphi\$ and \$f_Y\$ are related to the image size and field of view by
-\$\$\\begin{matrix}f_\\varphi=\\Phi/w\\\\f_Y=\frac{1}{2}h/\\tan{\\left(\\Psi/2\\right)}\\ \\\\\\end{matrix}\$\$
+\$\$\\begin{matrix}f_\\varphi=w/\\Phi\\\\f_Y=\frac{1}{2}h/\\tan{\\left(\\Psi/2\\right)}\\ \\\\\\end{matrix}\$\$
 where \$\\Phi\$ is the horizontal field of view and \$\\Psi\$ is the vertical field of view.
 
 ### Fisheye to cylindrical warping
@@ -377,7 +377,7 @@ whereas in cylindrical images,
 \$\$\\varphi=\\frac{u-u_0}{f}\$\$
 
 We are the ones creating the cylindrical image, so we get to choose its principal point, and we conveniently set it as
-\$\$\\left[u_0, v_0\\right]=\\left[\\frac{w}{2}, \\frac{h}{2}\\right]=\\left[f\Phi/2, f\\tan\\left(\\Psi/2\\right)\\right]\$\$
+\$\$\\left[u_0, v_0\\right]=\\left[\\frac{w}{2}, \\frac{h}{2}\\right]=\\left[f\\Phi/2, f\\tan\\left(\\Psi/2\\right)\\right]\$\$
 
 ### Training on perspective images and testing on cylindrical images
 What will happen if we take an existing monocular 3D object detector that was designed for perspective images (e.g., [CenterNet](https://arxiv.org/abs/1904.07850), [MonoDIS](https://openaccess.thecvf.com/content_ICCV_2019/html/Simonelli_Disentangling_Monocular_3D_Object_Detection_ICCV_2019_paper.html), [FCOS3D](https://openaccess.thecvf.com/content/ICCV2021W/3DODI/html/Wang_FCOS3D_Fully_Convolutional_One-Stage_Monocular_3D_Object_Detection_ICCVW_2021_paper.html)), train it only on perspective images, and during inference show it a cylindrical image?
@@ -474,20 +474,20 @@ Applying this extrinsic rotation produces the following cylindrical image:
 ![](img/woodscape10.png)
 
 This cylindrical image simulates an upright view, but the top part of it is empty. We should update the principal point to simulate a vertical shift of the image.
-How do we find an appropriate principal point? The vertical shift in pixel coordinates is related to the elevation angle of the tilt \$\\tau\$ by
 
-\$\$\\Delta v=-f\\tan{\\left(\\tau\\right)}\$\$
+How do we find an appropriate principal point? When there was no tilt, the principal point we chose was 
+\$\$\\left[u_0, v_0\\right]=\\left[\\frac{w}{2}, \\frac{h}{2}\\right]=\\left[f\\Phi/2, f\\tan\\left(\\Psi/2\\right)\\right]\$\$
 
-where \$f\$ is the focal length associated with the cylindrical image. The tilt angle \$\\tau\$ is the angle between \$r\$, the optical axis of the tilted camera in the upright coordinate frame, and \$r_\\bot\$, the vector parallel to the ground which we computed previously.
+For an elevation angle of the tilt \$\\tau\$ we would like
+
+\$\$v_0=f\\tan{\\left(\\frac{\\Psi}{2}+\\tau\\right)}\$\$
+
+The tilt angle \$\\tau\$ is the angle between \$r\$, the optical axis of the tilted camera in the upright coordinate frame, and \$r_\\bot\$, the vector parallel to the ground which we computed previously.
 
 \$\$\\tau = -\\frac{1}{\\Vert \\begin{matrix} R_{02}&&0&&R_{22} \\end{matrix} \\Vert} \\text{acos} \\left( \\left[\\begin{matrix}R_{02}&&0&&R_{22}\\end{matrix}\\right] \\left[\\begin{matrix}R_{02}\\\\R_{12}\\\\R_{22}\\end{matrix}\\right] \\right) = -\\text{acos}\\left(\\sqrt{R_{02}^2+R_{22}^2}\\right)\$\$
 
-Using the trigonometric identity for \$\\tan{\\left(\\text{acos}\\tau\\right)}\$, the vertical shift is
-
-\$\$\\Delta v=-f\\tan{\\left(\\tau\\right)}=f\\sqrt{\\frac{1}{R_{02}^2+R_{22}^2}-1}\$\$
-
 The new principal point is
-\$\$\\left[\\begin{matrix}u_0,&v_0\\\\\\end{matrix}+f\\sqrt{\\frac{1}{R_{02}^2+R_{22}^2}-1}\\right]\$\$
+\$\$\\left[u_0, v_0\\right]=\\left[\\frac{w}{2}, \\frac{h}{2}\\right]=\\left[f\\frac{\\Phi}{2}, f\\tan\\left(\\frac{\\Psi}{2}-\\text{acos}\\left(\\sqrt{R_{02}^2+R_{22}^2}\\right)\\right)\\right]\$\$
 
 Warping the fisheye image to a cylindrical image with this updated principal point produces the following image:
 
@@ -554,10 +554,10 @@ def get_mapping(calib, hfov=np.deg2rad(190), vfov=np.deg2rad(143)):
                      [-np.sin(azimuth), 0, np.cos(azimuth)]]).T
     R = R @ Ry  # now forward axis is parallel to the ground, but in the direction of the camera (not vehicle's forward)
     f = calib['intrinsic']['k1']
-    h, w = int(f*np.tan(vfov/2)), int(f*hfov)  # cylindrical image has a different size than the fisheye image
-    K = np.array([[w/hfov, 0, w/2],
-                     [0, h/np.tan(vfov/2), h/2 + h * np.tan(tilt) / np.tan(vfov/2)],
-                     [0, 0, 1]])  # intrinsic matrix for the cylindrical projection
+    h, w = int(2*f*np.tan(vfov/2)), int(f*hfov)  # cylindrical image has a different size than the fisheye image
+    K = np.array([[f, 0, w/2],
+                  [0, f, f * np.tan(vfov/2 + tilt)],
+                  [0, 0, 1]], dtype=np.float32)  # intrinsic matrix for the cylindrical projection
     K_inv = np.linalg.inv(K)
     # Create pixel grid and compute a ray for every pixel
     xv, yv = np.meshgrid(range(w), range(h), indexing='xy')
