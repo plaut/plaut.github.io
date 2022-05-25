@@ -376,12 +376,15 @@ where \$\\varphi\$ is the azimuth of the ray pointing towards the object. In per
 whereas in cylindrical images,
 \$\$\\varphi=\\frac{u-u_0}{f}\$\$
 
+We are the ones creating the cylindrical image, so we get to choose its principal point, and we conveniently set it as
+\$\$\\left[u_0, v_0\\right]=\\left[w/2, h/2\\right]=\\left[f\Phi/2, f\\tan\\left(\\Psi/2\\right)\\right]\$\$
+
 ### Training on perspective images and testing on cylindrical images
 What will happen if we take an existing monocular 3D object detector that was designed for perspective images (e.g., [CenterNet](https://arxiv.org/abs/1904.07850), [MonoDIS](https://openaccess.thecvf.com/content_ICCV_2019/html/Simonelli_Disentangling_Monocular_3D_Object_Detection_ICCV_2019_paper.html), [FCOS3D](https://openaccess.thecvf.com/content/ICCV2021W/3DODI/html/Wang_FCOS3D_Fully_Convolutional_One-Stage_Monocular_3D_Object_Detection_ICCVW_2021_paper.html)), train it only on perspective images, and during inference show it a cylindrical image?
 
 Such a model, to which we have made no adaptations to the cylindrical projection and which has not seen any cylindrical images during training, will process the cylindrical image as if it were a perspective image. It suffers from the same optical illusion we experienced with the cylindrical image of the Colosseum in Rome, as if the walls of the Colosseum had a constant \$Z\$, even though in 3D space they have a constant \$\\rho\$.
 
-The monocular 3D object detector outputs the 3D bounding boxes which correspond to a virtual 3D scene which would create the image if it were captured by a pinhole camera. It predicts a 3D bounding box of a virtual object at location \$\\left[\\begin{matrix}\\widetilde{X}&\\widetilde{Y}&\\widetilde{Z}\\\\\\end{matrix}\\right]\$, and we know this vector corresponds to the cylindrical coordinates of the real object:
+The monocular 3D object detector outputs the 3D bounding boxes which correspond to a virtual 3D scene which would create the image if it were captured by a pinhole camera. It predicts a 3D bounding box of a virtual object at location \$\\left[\\widetilde{X}, \\widetilde{Y}, \\widetilde{Z}\\\\\\right]\$, and we know this vector corresponds to the cylindrical coordinates of the real object:
 \$\$\\left[\\begin{matrix}\\widetilde{X}\\\\\\widetilde{Y}\\\\\\widetilde{Z}\\\\\\end{matrix}\\right]=\\left[\\begin{matrix}\\rho\\varphi\\\\Y\\\\\\rho\\\\\\end{matrix}\\right]=\\left[\\begin{matrix}\\sqrt{X^2+Z^2}\\text{atan2}{\\left(X,Z\\right)}\\\\Y\\\\\\sqrt{X^2+Z^2}\\\\\\end{matrix}\\right]\$\$
 The location of the real 3D bounding box in Cartesian coordinates is
 \$\$\\left[\\begin{matrix}X\\\\Y\\\\Z\\\\\\end{matrix}\\right]=\\left[\\begin{matrix}\\rho\\sin{\\varphi}\\\\\\widetilde{Y}\\\\\\rho\\cos{\\varphi}\\\\\\end{matrix}\\right]=\\left[\\begin{matrix}\\widetilde{Z}\\sin{\\left(\\widetilde{X}/\\widetilde{Z}\\right)}\\\\\\widetilde{Y}\\\\\\widetilde{Z}\\cos{\\left(\\widetilde{X}/\\widetilde{Z}\\right)}\\\\\\end{matrix}\\right]\$\$
@@ -394,13 +397,13 @@ The azimuth and elevation of the ray pointing towards the real object are
 
 Thus, to recover the 3D bounding box of an object in a cylindrical image using a monocular 3D object detector that was designed for perspective images and trained only on perspective images, all we have to do is apply these transformations to the output as a post-processing step.
 
-The global yaw \$\\beta\$ is related to the local yaw \beta_{local} (the angle which the CNN predicts) by
+The global yaw \$\\beta\$ is related to the local yaw \$\\beta_{local}\$ (the angle which the CNN predicts) by
 \$\$\\beta=\\beta_{local}+\\varphi=\\beta_{local}+\\tan{\\widetilde{\\varphi}}\$\$
 The following figure illustrates the relationship between the virtual object and the real object:
 
 ![](img/Virtual.png)
 
-The depth \$\widetilde{Z}\$ to the virtual object is actually the cylindrical radial distance \rho to the real object, and the azimuth of the ray pointing towards the object is changed by applying the tangent function.
+The depth \$\widetilde{Z}\$ to the virtual object is actually the cylindrical radial distance \$\\rho$ to the real object, and the azimuth of the ray pointing towards the object is changed by applying the tangent function.
 
 When creating the cylindrical image, we chose its size such that its intrinsic matrix is identical to that of the perspective camera used during training (\$f_\\varphi=f_Y=f\$). Alternatively, we can normalize the depth regressed from perspective images to \$Z/f\$ during training, and multiply \$\widetilde{Z}/f\$ by \$f\$ during inference. When using focal length normalization, all 3D bounding box parameters are camera agnostic, and we can test on cylindrical images with an intrinsic matrix different from the intrinsic matrix of the perspective training images, or train (and test) on a union of multiple datasets with different calibrations.
 
@@ -475,7 +478,7 @@ How do we find an appropriate principal point? The vertical shift in pixel coord
 
 \$\$\\Delta v=-f\\tan{\\left(\\tau\\right)}\$\$
 
-where \$f\$ is the focal length associated with the cylindrical image. The tilt angle \$\\tau\$ is the angle between \$r\$, the optical axis in the upright coordinate frame, and \$r_\\bot\$, the vector parallel to the ground which we computed previously.
+where \$f\$ is the focal length associated with the cylindrical image. The tilt angle \$\\tau\$ is the angle between \$r\$, the optical axis of the tilted camera in the upright coordinate frame, and \$r_\\bot\$, the vector parallel to the ground which we computed previously.
 
 \$\$\\tau = -\\frac{1}{\\Vert \\begin{matrix} R_{02}&&0&&R_{22} \\end{matrix} \\Vert} \\text{acos} \\left( \\left[\\begin{matrix}R_{02}&&0&&R_{22}\\end{matrix}\\right] \\left[\\begin{matrix}R_{02}\\\\R_{12}\\\\R_{22}\\end{matrix}\\right] \\right) = -\\text{acos}\\left(\\sqrt{R_{02}^2+R_{22}^2}\\right)\$\$
 
@@ -484,7 +487,7 @@ Using the trigonometric identity for \$\\tan{\\left(\\text{acos}\\tau\\right)}\$
 \$\$\\Delta v=-f\\tan{\\left(\\tau\\right)}=f\\sqrt{\\frac{1}{R_{02}^2+R_{22}^2}-1}\$\$
 
 The new principal point is
-\$\$\\left(\\begin{matrix}u_0,&v_0\\\\\\end{matrix}+f\\sqrt{\\frac{1}{R_{02}^2+R_{22}^2}-1}\\right)\$\$
+\$\$\\left[\\begin{matrix}u_0,&v_0\\\\\\end{matrix}+f\\sqrt{\\frac{1}{R_{02}^2+R_{22}^2}-1}\\right]\$\$
 
 Warping the fisheye image to a cylindrical image with this updated principal point produces the following image:
 
@@ -508,7 +511,7 @@ Right:
 
 There is no reason not to train a single CNN on data from all four cameras jointly.
 
-In order to project a 3D point in fisheye camera coordinates, \$P=\\left[X, Y, Z\\right],\$ onto the upright cylindrical image, we must use not only the intrinsic matrix but also the extrinsic rotation \$R_{\\tau}\$. First, we rotate \$P\$ by \$R_{\\tau}\$ by computing \$R_{\\tau}P\$. Then we convert the rotated vector to cylindrical coordinates and normalize it to \$\\rho=1\$. Then we multiply the cylindrical coordinates by the cylindrical intrinsic matrix.
+In order to project a 3D point in fisheye camera coordinates, \$P=\\left[X, Y, Z\\right]\$, onto the upright cylindrical image, we must use not only the intrinsic matrix but also the extrinsic rotation \$R_{\\tau}\$. First, we rotate \$P\$ by \$R_{\\tau}\$ by computing \$R_{\\tau}P\$. Then we convert the rotated vector to cylindrical coordinates and normalize it to \$\\rho=1\$. Then we multiply the cylindrical coordinates by the cylindrical intrinsic matrix.
 
 When computing the ray associated with a 2D keypoint in the cylindrical image, we multiply the homogeneous coordinates of the keypoint by the inverse intrinsic matrix, then convert from cylindrical coordinates to cartesian coordinates, and then rotate by the inverse extrinsic rotation matrix \$R_{\\tau}^{-1}=R_{\\tau}^T\$.
 
