@@ -269,7 +269,7 @@ We could stitch the images together so that they don’t overlap and together cr
 
 The stitched image almost looks natural, but there is a sudden change in the camera model at the invisible border between the two views. We cannot expect a CNN, which is translation invariant, to learn 3D bounding box predictions that depend on whether the object is in the left half of the image, the right half of the image, or on the border between them.
 
-Another drawback of multiple rectifications, whether stitched or not, is that they require more computation cost compared to a single image the size of the original fisheye image.
+Yet another disadvantage of multiple rectifications, whether stitched or not, is that they require more computation cost compared to a single image the size of the original fisheye image.
 
 ## Cylindrical images to the rescue
 ### The cylindrical projection
@@ -300,12 +300,12 @@ Then we project the ray onto the fisheye image using the fisheye projection with
 
 Once the fisheye image is warped to a cylindrical image, it becomes completely independent of the intrinsic parameters of the physical fisheye camera (focal length, principal point, distortion coefficients).
 
-Here is the WoodScape sample, which in a previous section we warped to a perspective image, now warped to a cylindrical image[\*](https://plaut.github.io/fisheye_tutorial/#extrinsic-rotation-2):
+Here is the WoodScape sample, which in a previous section we warped to a perspective image, now warped to a cylindrical image:
 
 ![](img/woodscape8.png)
 
 ### Comparing cylindrical images to perspective images
-Warping a fisheye image to a cylindrical image does not cause the problems that arise when trying to warp a fisheye image to a perspective image. A cylindrical image is able to capture a FoV of over \$180^\\circ\$ (nothing special happens at a viewing angle of \$90^\\circ\$), there are no blurs or artifacts, and no drastic changes in the relative area occupied by objects in the image. In many ways, a fisheye image warped to a cylindrical image appears more like a natural perspective image than a fisheye image warped to a perspective image. A cylindrical image could theoretically be created by rotating a pinhole camera and capturing one column of pixels at a time. Straight vertical lines in 3D appear as straight vertical lines in the cylindrical image. The horizon appears as a straight horizontal line, but all horizontal lines other that the horizon behave differently.
+Warping a fisheye image to a cylindrical image does not cause the problems that arise when trying to warp a fisheye image to a perspective image. A cylindrical image is able to capture a FoV of over \$180^\\circ\$ (nothing special happens at a viewing angle of \$90^\\circ\$), there are no blurs or artifacts, and no drastic changes in the relative area occupied by objects in the image. In many ways, a fisheye image warped to a cylindrical image appears more like a natural perspective image than a fisheye image warped to a perspective image. Straight vertical lines in 3D appear as straight vertical lines in the cylindrical image. The horizon appears as a straight horizontal line, but all horizontal lines other that the horizon behave differently.
 
 Straight horizontal lines in perspective images correspond to curved lines in cylindrical images and straight horizontal lines in cylindrical images correspond to curved lines in perspective images.
 
