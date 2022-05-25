@@ -464,7 +464,7 @@ By removing the y component, we get a vector pointing in the azimuthal direction
 ![](img/axes.png)
 
 The angle between this vector and the optical axis of the upright cylinder is
-\$\$\\phi = \\frac{1}{\\Vert \\begin{matrix} R_{02}&&0&&R_{22} \\end{matrix} \\Vert} \\text{acos} \\left( \\left[\\begin{matrix}0&&0&&1\\end{matrix}\\right] \\left[\\begin{matrix}R_{02}\\\\0\\\\R_{22}\\end{matrix}\\right] \\right) = \\text{acos}\\left(\\frac{R_{22}}{\\sqrt{R_{02}^2+R_{22}^2}}\\right)\$\$
+\$\$\\phi = \\text{acos} \\left(\\frac{1}{\\Vert \\begin{matrix} R_{02}&&0&&R_{22} \\end{matrix} \\Vert} \\left[\\begin{matrix}0&&0&&1\\end{matrix}\\right] \\left[\\begin{matrix}R_{02}\\\\0\\\\R_{22}\\end{matrix}\\right] \\right) = \\text{acos}\\left(\\frac{R_{22}}{\\sqrt{R_{02}^2+R_{22}^2}}\\right)\$\$
 
 The extrinsic rotation matrix we should use is:
 \$\$R_{\\tau} = RR_y\\left(-\\phi\\right)=\\left[\\begin{matrix}R_{00}&R_{01}&R_{02}\\\\R_{10}&R_{11}&R_{12}\\\\R_{20}&R_{21}&R_{22}\\\\\\end{matrix}\\right]\\left[\\begin{matrix}\\cos{\\phi}&0&-\\sin{\\phi}\\\\0&1&0\\\\\\sin{\\phi}&0&\\cos{\\phi}\\\\\\end{matrix}\\right]\$\$
@@ -484,7 +484,7 @@ For an elevation angle of the tilt \$\\tau\$ we would like
 
 The tilt angle \$\\tau\$ is the angle between \$r\$, the optical axis of the tilted camera in the upright coordinate frame, and \$r_\\bot\$, the vector parallel to the ground which we computed previously.
 
-\$\$\\tau = -\\frac{1}{\\Vert \\begin{matrix} R_{02}&&0&&R_{22} \\end{matrix} \\Vert} \\text{acos} \\left( \\left[\\begin{matrix}R_{02}&&0&&R_{22}\\end{matrix}\\right] \\left[\\begin{matrix}R_{02}\\\\R_{12}\\\\R_{22}\\end{matrix}\\right] \\right) = -\\text{acos}\\left(\\sqrt{R_{02}^2+R_{22}^2}\\right)\$\$
+\$\$\\tau = - \\text{acos} \\left(\\frac{1}{\\Vert \\begin{matrix} R_{02}&&0&&R_{22} \\end{matrix} \\Vert} \\left[\\begin{matrix}R_{02}&&0&&R_{22}\\end{matrix}\\right] \\left[\\begin{matrix}R_{02}\\\\R_{12}\\\\R_{22}\\end{matrix}\\right] \\right) = -\\text{acos}\\left(\\sqrt{R_{02}^2+R_{22}^2}\\right)\$\$
 
 The new principal point is
 \$\$\\left[u_0, v_0\\right]=\\left[f\\frac{\\Phi}{2}, f\\tan\\left(\\frac{\\Psi}{2}-\\text{acos}\\left(\\sqrt{R_{02}^2+R_{22}^2}\\right)\\right)\\right]\$\$
