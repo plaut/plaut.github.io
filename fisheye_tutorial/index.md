@@ -377,7 +377,7 @@ whereas in cylindrical images,
 \$\$\\varphi=\\frac{u-u_0}{f}\$\$
 
 We are the ones creating the cylindrical image, so we get to choose its principal point, and we conveniently set it as
-\$\$\\left[u_0, v_0\\right]=\\left[\\frac{1}{2}w, \\frac{1}{2}h\\right]=\\left[f\Phi/2, f\\tan\\left(\\Psi/2\\right)\\right]\$\$
+\$\$\\left[u_0, v_0\\right]=\\left[\\frac{w}{2}, \\frac{h}{2}\\right]=\\left[f\Phi/2, f\\tan\\left(\\Psi/2\\right)\\right]\$\$
 
 ### Training on perspective images and testing on cylindrical images
 What will happen if we take an existing monocular 3D object detector that was designed for perspective images (e.g., [CenterNet](https://arxiv.org/abs/1904.07850), [MonoDIS](https://openaccess.thecvf.com/content_ICCV_2019/html/Simonelli_Disentangling_Monocular_3D_Object_Detection_ICCV_2019_paper.html), [FCOS3D](https://openaccess.thecvf.com/content/ICCV2021W/3DODI/html/Wang_FCOS3D_Fully_Convolutional_One-Stage_Monocular_3D_Object_Detection_ICCVW_2021_paper.html)), train it only on perspective images, and during inference show it a cylindrical image?
@@ -518,3 +518,79 @@ When computing the ray associated with a 2D keypoint in the cylindrical image, w
 Tilted cameras have one more complication when it comes to monocular 3D object detection. This complication has nothing to do with fisheye cameras or the cylindrical projection, it is merely the result of the tilt itself. When the camera is upright (think of datasets from front facing perspective cameras like KITTI), we often assume that objects have pure yaw rotation with zero pitch and zero roll, where yaw is defined as the rotation around the \$y\$ axis. This is a good approximation, as vehicles are almost always parallel to the ground and the ground is approximately flat. We train detectors to predict only the yaw, and when lifting the 3D bounding box we assume zero pitch and zero roll. However, when the camera is tilted, its \$y\$ axis is no longer perpendicular to the ground, and objects have nonzero roll, pitch and yaw.
 
 The detector sees the cylindrical image, where objects do look parallel to the ground and wppear to have pure yaw. Yet, we should not train the detector to predict the yaw of the object annotated in the fisheye camera coordinate frame while ignoring the roll and pitch. Instead, we should compute the orientation of the object in the upright view by accounting for the extrinsic rotation. We do so by simple matrix multiplication or (quaternion multiplication): if \$R_{\\tau}\$ is the extrinsic rotation matrix and \$Q\$ is the object orientation matrix in fisheye camera coordinates, then \$R_{\\tau}^TQ\$ is the object orientation associated with the upright cylindrical image. If the object is parallel to the ground, then \$R_{\\tau}^TQ\$ should be a rotation purely around the \$y\$ axis, and that is the orientation we should train the monocular 3D object detector to predict.
+
+### Sample code
+Putting it all together, and assuming the WoodScape Dataset format, the following code can be used to warp a fisheye image to a cylindrical image.
+
+```python
+import cv2
+import numpy as np
+from pyquaternion import Quaternion
+
+
+def get_mapping(calib, hfov=np.deg2rad(190), vfov=np.deg2rad(143)):
+    """
+    Compute the pixel mapping from a fisheye image to a cylindrical image
+    :param calib: calibration in WoodScape format, as a dictionary
+    :param hfov: horizontal field of view, in radians
+    :param vfov: vertical field of view, in radians
+    :return: horizontal and vertical mapping
+    """
+    # Prepare intrinsic and extrinsic matrices for the cylindrical image
+    R = Quaternion(w=calib['extrinsic']['quaternion'][3],
+                   x=calib['extrinsic']['quaternion'][0],
+                   y=calib['extrinsic']['quaternion'][1],
+                   z=calib['extrinsic']['quaternion'][2]).rotation_matrix.T
+    rdf_to_flu = np.array([[0, 0, 1],
+                           [-1, 0, 0],
+                           [0, -1, 0]], dtype=np.float64)
+    R = R @ rdf_to_flu  # Rotation from vehicle to camera includes FLU-to-RDF. Remove FLU-to-RDF from R.
+    azimuth = np.arccos(R[2, 2] / np.sqrt(R[0, 2] ** 2 + R[2, 2] ** 2))  # azimuth angle parallel to the ground
+    if R[0, 2] < 0:
+        azimuth = 2*np.pi - azimuth
+    tilt = -np.arccos(np.sqrt(R[0, 2]**2 + R[2, 2]**2))  # elevation to the ground plane
+    Ry = np.array([[np.cos(azimuth), 0, np.sin(azimuth)],
+                     [0, 1, 0],
+                     [-np.sin(azimuth), 0, np.cos(azimuth)]]).T
+    R = R @ Ry  # now forward axis is parallel to the ground, but in the direction of the camera (not vehicle's forward)
+    f = calib['intrinsic']['k1']
+    h, w = int(f*np.tan(vfov/2)), int(f*hfov)  # cylindrical image has a different size than the fisheye image
+    K = np.array([[w/hfov, 0, w/2],
+                     [0, h/np.tan(vfov/2), h/2 + h * np.tan(tilt) / np.tan(vfov/2)],
+                     [0, 0, 1]])  # intrinsic matrix for the cylindrical projection
+    K_inv = np.linalg.inv(K)
+    # Create pixel grid and compute a ray for every pixel
+    xv, yv = np.meshgrid(range(w), range(h), indexing='xy')
+    p = np.stack([xv, yv, np.ones_like(xv)])  # pixel homogeneous coordinates
+    p = p.transpose(1, 2, 0)[:, :, :, np.newaxis]
+    r = K_inv @ p  # r is in cylindrical coordinates
+    r /= r[:, :, [2], :]  # r is now in cylindrical coordinates with unit cylindrical radius
+    # Convert to Cartesian coordinates
+    r[:, :, 2, :] = np.cos(r[:, :, 0, :])
+    r[:, :, 0, :] = np.sin(r[:, :, 0, :])
+    r[:, :, 1, :] = r[:, :, 1, :]
+    r = R @ r  # extrinsic rotation from an upright cylinder to the camera axis
+    theta = np.arccos(r[:, :, [2], :] / np.linalg.norm(r, axis=2, keepdims=True))  # compute incident angle
+    # project the ray onto the fisheye image according to the fisheye model and intrinsic calibration
+    c_X = calib['intrinsic']['cx_offset'] + calib['intrinsic']['width'] / 2 - 0.5
+    c_Y = calib['intrinsic']['cy_offset'] + calib['intrinsic']['height'] / 2 - 0.5
+    k1, k2, k3, k4 = [calib['intrinsic']['k%d' % i] for i in range(1, 5)]
+    rho = k1 * theta + k2 * theta ** 2 + k3 * theta ** 3 + k4 * theta ** 4
+    chi = np.linalg.norm(r[:, :, :2, :], axis=2, keepdims=True)
+    u = np.true_divide(rho * r[:, :, [0], :], chi, out=np.zeros_like(chi), where=(chi != 0))  # horizontal
+    v = np.true_divide(rho * r[:, :, [1], :], chi, out=np.zeros_like(chi), where=(chi != 0))  # vertical
+    mapx = u[:, :, 0, 0] + c_X
+    mapy = v[:, :, 0, 0] * calib['intrinsic']['aspect_ratio'] + c_Y
+    return mapx, mapy
+
+
+def fisheye_to_cylindrical(image, calib):
+    """
+    Warp a fisheye image to a cylindrical image
+    :param image: fisheye image, as a numpy array
+    :param calib: calibration in WoodScape format, as a dictionary
+    :return: cylindrical image
+    """
+    mapx, mapy = get_mapping(calib)
+    return cv2.remap(image, mapx.astype(np.float32), mapy.astype(np.float32), interpolation=cv2.INTER_LINEAR)
+```
