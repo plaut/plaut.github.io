@@ -239,7 +239,7 @@ When the viewing angle is smaller than \$90^\\circ\$ but still large, the warped
 Yet another disadvantage is that objects near the center of the fisheye image become smaller (with information loss) in the warped image and objects at large viewing angles become larger (and blurred) in the warped image, further limiting the performance of computer vision tasks.
 
 ## Extrinsic rotation
-Fisheye cameras on vehicles are often installed tilted downwards towards the ground, unlike perspective cameras which are always installed upright in vehicles. This may be because in the past, fisheye cameras were used for tasks where the area close to the ground is especially important, such as parking assist systems and rear pedestrian alert systems. Another reason may be that fisheye images look deformed and unnatural whether they are tilted or upright, unlike perspective images who look natural when they are upright but not when they are tilted and more easily convince engineers to install them upright.
+Fisheye cameras on vehicles are often installed tilted downwards towards the ground, unlike perspective cameras which are always installed upright in vehicles. This may be because in the past, fisheye cameras were used for tasks where the area close to the ground is especially important, such as parking assist systems and rear pedestrian alert systems. Another reason may be that fisheye images look deformed and unnatural whether they are tilted or upright, unlike perspective images who look natural when they are upright but not when they are tilted and so more easily convince engineers to install them upright.
 
 The tilt in the WoodScape sample above is evident in the warped image above in that straight vertical lines in the 3D world appear to tilt towards the right when they are in the right half of the image and towards the left when they are in the left half of the image.
 
@@ -251,7 +251,7 @@ Now vertical lines in the 3D world appear as vertical lines in the image, but a 
 
 ![](img/woodscape4.png)
 
-Now there are no empty pixels in the warped image, but a large part of the field of view is occupied by the road.
+Now there are no empty pixels in the warped image, but a large part of the FoV is occupied by the road.
 
 ## Multiple rectifications
 After concluding that any perspective image is limited to only part of the fisheye camera’s FoV, and we can simulate rotations of the pinhole camera’s optical axis, one might ask: why not create multiple perspective images from a single fisheye camera, each covering a different part of the FoV?
@@ -259,7 +259,7 @@ Here is the same WoodScape sample, but instead of an optical axis parallel to th
 
 ![](img/woodscape5.png)
 
-We could input each perspective image separately into a CNN for processing. However, each perspective image only sees part of the FoV, and objects will often be truncated, i.e., only part of the object is visible, such as the red car in the left edge of the right image above. It is more difficult to detect an object that is only partly visible compared to an object that is fully visible. In monocular 3D detection, this degrades not only the recall but also the 3D bounding box parameter errors (position, orientation, dimensions).
+We could input each perspective image separately into a CNN for processing. However, each perspective image only sees part of the FoV, and objects will often be truncated, i.e., only part of the object is visible, such as the red car on the left edge of the right image above. It is more difficult to detect an object that is only partly visible compared to an object that is fully visible. In monocular 3D detection, this degrades not only the recall but also the 3D bounding box parameter errors (position, orientation, dimensions).
 
 In addition, an object that is visible in two different images is detected twice (once per image), and we must somehow associate the different detections and unify them to a single object prediction. This contradicts the motivation for using wide FoV cameras which could potentially process the entire FoV in a single image.
 
@@ -268,6 +268,8 @@ We could stitch the images together so that they don’t overlap and together cr
 ![](img/woodscape6.png)
 
 The stitched image almost looks natural, but there is a sudden change in the camera model at the invisible border between the two views. We cannot expect a CNN, which is translation invariant, to learn 3D bounding box predictions that depend on whether the object is in the left half of the image, the right half of the image, or on the border between them.
+
+Another drawback of multiple rectifications, whether stitched or not, is that they require more computation cost compared to a single image the size of the original fisheye image.
 
 ## Cylindrical images to the rescue
 ### The cylindrical projection
@@ -278,7 +280,8 @@ A cylindrical image is the projection of a 3D scene onto the unit cylinder, much
 In the cylindrical camera model, a 3D point is related to the homogeneous coordinates of the pixel it corresponds to by the following transformation:
 \$\$\\left[\\begin{matrix}u\\\\v\\\\1\\\\\\end{matrix}\\right]\\rho=\\left[\\begin{matrix}f_\\varphi&0&u_0\\\\0&f_Y&v_0\\\\0&0&1\\\\\\end{matrix}\\right]\\left[\\begin{matrix}\\rho\\varphi\\\\Y\\\\\\rho\\\\\\end{matrix}\\right],\$\$
 where
-\$\$\\begin{matrix}\\rho=\\sqrt{X^2+Z^2}\\\\\\varphi=\\text{atan2}{\\left(X, Z\\right)}\\\\\\end{matrix}.\$\$
+\$\$\\rho=\\sqrt{X^2+Z^2}\$\$
+\$\$\\varphi=\\text{atan2}{\\left(X, Z\\right)}\\\\\$\$
 We refer to \$\\rho\$ as the cylindrical radial distance and to \$\\varphi\$ as the azimuth angle.
 
 Compare the equation above to the perspective projection. Here too there is an intrinsic matrix which applies only scaling and translation. The difference is that here the intrinsic matrix multiplies a 3D point given in cylindrical coordinates rather than Cartesian coordinates.
