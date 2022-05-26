@@ -60,7 +60,7 @@ After undistorting the image, it will look like this:
 
 The undistorted image obeys the pinhole camera model, i.e., the mapping between 3D points and pixels is determined by the perspective projection.
 
-## 2D Object Detection
+## 2D object detection
 In 2D object detection, a neural network receives an image as input, and it outputs 2D bounding boxes, often parametrized as \$\\left(u_{left},v_{top},u_{right},v_{bottom}\\right)\$ and the class (e.g., car, bicycle, pedestrian).
 
 Convolutional neural networks (CNNs) have a translation invariance property: if the image size is, say, \$1000\\times1000\$, and the convolution kernel size is \$3\times3\$, and the stride is 1, then the output of the convolution layer is features of the same spatial size \$1000\\times1000\$ where each feature has a receptive field of \$3\times3\$ with respect to the input. Each feature has no access to its spatial coordinate, i.e., it does not “know” where it is in the image. As the network becomes deeper and the feature channels become spatially smaller due to strided convolutions or max-pooling, the receptive field becomes larger, but maintains the translation invariance property. This translation invariance is a prior that provides an inductive bias and plays a significant role in the incredible success of deep learning for computer vision. A car on the left side of the image activates features the same way, using the same network weights, as a car on the right side of the image. The CNN only needs to learn to recognize something that looks like a car, no matter where it is in the image.
@@ -168,7 +168,7 @@ The mapping between a 3D point in (tilted) camera coordinates \$P\$ and the homo
 where \$R\$ is the rotation matrix from the physical (tilted) camera to the upright coordinate frame parallel to the ground.
 
 # Fisheye cameras
-## The Fisheye Projection
+## The fisheye projection
 Images from fisheye cameras look very different from images captured by perspective cameras. Here is an example of a fisheye image:
 
 ![](img/The_Squirrels_0048.jpg)
