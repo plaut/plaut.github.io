@@ -28,7 +28,7 @@ In the 3D coordinates we use, the \$x\$ axis is right, the \$y\$ axis is down, t
 The pinhole camera model is a simple model that is used very often. In this model, the 3D coordinates of a point are related to the homogeneous coordinates of a pixel,
 \$\$p^\\prime=\\left[\\begin{matrix}u\\\\v\\\\1\\\\\\end{matrix}\\right],\$\$
 by the following transformation:
-\$\$p^\\prime Z=KP\$\$
+\$\$p^\\prime Z=KP,\$\$
 where
 \$\$K=\\left[\\begin{matrix}K_{00}&K_{01}&K_{02}\\\\K_{10}&K_{11}&K_{12}\\\\K_{20}&K_{21}&K_{22}\\\\\\end{matrix}\\right]=\\left[\\begin{matrix}f&0&u_0\\\\0&f&v_0\\\\0&0&1\\\\\\end{matrix}\\right]\$\$
 is called the intrinsic matrix. The above equation can be written explicitly as
@@ -76,7 +76,7 @@ Moreover, if most of the objects in the training set happen to be in the left ha
 For these reasons, it is always a good idea to undistort images before applying computer vision models to them.
 
 ## Monocular 3D object detection 
-In monocular 3D object detection, we often parametrize the 3D bounding box as:
+In monocular 3D object detection, we often parametrize the 3D bounding box as
 \$\$u, v, W, H, L, q, Z\$\$
 where \$\\left[u, v\\right]\$ are the pixel coordinates of the object’s center in the image, \$\(W, H, L\)\$ are the 3D dimensions of the object, \$q\$ is the [local (allocentric) orientation](https://towardsdatascience.com/orientation-estimation-in-monocular-3d-object-detection-f850ace91411) as a [unit quaternion](https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation), and \$Z\$ is the depth (the distance along the optical axis). These 10 values, together with the intrinsic camera calibration \$({f,u}_0, v_0)\$, are sufficient to compute the 8 corners of the 3D bounding box.
 
@@ -92,7 +92,7 @@ What if we had a huge dataset of road images like [KITTI](http://www.cvlibs.net/
 Now, why do we expect a neural network to predict the 3D position of objects from an image that is 2D? Where is the 3D information coming from? The answer is that an image from a camera is not just any 2D array of pixels. It is created from a 3D scene using the perspective projection.
 
 One of the properties of the perspective projection is that objects become smaller as they move farther away from the camera and larger as they move closer to the camera. The ratio between the 3D size of the object and its 2D size in the image, known as the magnification, is equal to the focal length divided by the depth:
-\$\$\\frac{\\Delta u}{\\Delta X}=\\frac{\\Delta v}{\\Delta Y}=\\frac{f}{Z}\$\$
+\$\$\\frac{\\Delta u}{\\Delta X}=\\frac{\\Delta v}{\\Delta Y}=\\frac{f}{Z}.\$\$
 This is easy to derive directly from the projection equation.
 
 Detecting a 2D bounding box around the object is not a difficult task for a CNN, and the focal length is assumed to be known. The unknowns in this equation are the 3D size of the object and its depth. Thus, there is an ambiguity between objects that are small and near the camera and objects that are large and distant from the camera, where the distance is measured along the \$z\$ axis.
@@ -192,7 +192,7 @@ In the equidistant fisheye model, the distance between a pixel in the image and 
 In the equisolid fisheye projection \$r=2f\\sin{\\frac{\\theta}{2}}\$, in the stereographic fisheye projection \$r=2f\\tan{\\frac{\\theta}{2}}\$, and in the orthographic fisheye projection \$r=f\\sin{\\theta}\$. In all the examples in this tutorial we will use the equidistant fisheye projection, as in the OpenCV model and the WoodScape model.
 
 In OpenCV, distortion is added by replacing \$\\theta\$ in the projection equation by
-\$\$\\theta_d=\\theta+k_1\\theta^3+k_2\\theta^5+k_3\\theta^7+k_4\\theta^9\$\$
+\$\$\\theta_d=\\theta+k_1\\theta^3+k_2\\theta^5+k_3\\theta^7+k_4\\theta^9.\$\$
 where the polynomial coefficients \$k_1, k_2, k_3, k_4\$ determine the radial distortion. With distortion,
 \$\$r=f\\theta_d=f\\left(\\theta+k_1\\theta^3+k_2\\theta^5+k_3\\theta^7+k_4\\theta^9\\right).\$\$
 In the WoodScape dataset, distortion is given in terms of \$r\\left(\\theta\\right)\$ such that \$f\$ is hidden inside the distortion coefficients, and the polynomial is of lower order and has both even and odd powers:
@@ -345,9 +345,9 @@ Is there a translation invariant magnification in cylindrical images?
 If the object is not too large and not too close to the camera, then its width is approximately the length of an arc:
 \$\$\\Delta X=\\rho\\sin{\\Delta\\varphi}\\approx\\rho\\Delta\\varphi\$\$
 Using this approximation,
-\$\$\\Delta u = f_\\varphi \\Delta \\varphi \\approx \\frac{f_\\varphi}{\\rho}\\Delta X\$\$
+\$\$\\Delta u = f_\\varphi \\Delta \\varphi \\approx \\frac{f_\\varphi}{\\rho}\\Delta X\.$\$
 In the vertical direction we need not use any approximation,
-\$\$\\Delta v=\\frac{f_Y}{\\rho}\\Delta Y\$\$
+\$\$\\Delta v=\\frac{f_Y}{\\rho}\\Delta Y.\$\$
 Let us choose \$f_\\varphi=f_Y=f\$ (we are the ones creating the cylindrical image, so we get to choose its intrinsic matrix), and set the size of the cylindrical image size to correspond to the horizontal and vertical FoV:
 \$\$\\begin{matrix}w=f\\Phi\\\\h=2f\\tan{\\left(\\Psi/2\\right)}\\\\\\end{matrix}\$\$ 
 Thus, using the small angle approximation gives us a magnification equation very similar to the magnification equation for pinhole cameras:
@@ -370,14 +370,14 @@ During inference, we find the location of the 3D bounding box by multiplying the
 In the same way we used a normalized \$Z/f\$ instead of \$Z\$ for generalization between perspective cameras, we can use \$\\rho/f\$ instead of \$\\rho\$ for generalization between cylindrical images. 
 
 Notice that even though the local orientation is predicted the same way as it was for perspective images, recovering the global orientation from it requires another modification. The global yaw \$\\beta\$ is related to the local yaw \$\\beta_{local}\$ (the angle which the CNN predicts) by
-\$\$\\beta=\\beta_{local}+\\varphi\$\$
+\$\$\\beta=\\beta_{local}+\\varphi,\$\$
 where \$\\varphi\$ is the azimuth of the ray pointing towards the object. In perspective images,
 \$\$\\varphi=\\text{atan}\\left(\\frac{u-u_0}{f}\\right),\$\$
 whereas in cylindrical images,
-\$\$\\varphi=\\frac{u-u_0}{f}\$\$
+\$\$\\varphi=\\frac{u-u_0}{f}.\$\$
 
 We are the ones creating the cylindrical image, so we get to choose its principal point, and we conveniently set it as
-\$\$\\left[u_0, v_0\\right]=\\left[\\frac{w}{2}, \\frac{h}{2}\\right]=\\left[f\\Phi/2, f\\tan\\left(\\Psi/2\\right)\\right]\$\$
+\$\$\\left[u_0, v_0\\right]=\\left[\\frac{w}{2}, \\frac{h}{2}\\right]=\\left[f\\Phi/2, f\\tan\\left(\\Psi/2\\right)\\right].\$\$
 
 ### Training on perspective images and testing on cylindrical images
 What will happen if we take an existing monocular 3D object detector that was designed for perspective images (e.g., [CenterNet](https://arxiv.org/abs/1904.07850), [MonoDIS](https://openaccess.thecvf.com/content_ICCV_2019/html/Simonelli_Disentangling_Monocular_3D_Object_Detection_ICCV_2019_paper.html), [FCOS3D](https://openaccess.thecvf.com/content/ICCV2021W/3DODI/html/Wang_FCOS3D_Fully_Convolutional_One-Stage_Monocular_3D_Object_Detection_ICCVW_2021_paper.html)), train it only on perspective images, and during inference show it a cylindrical image?
@@ -387,18 +387,18 @@ Such a model, to which we have made no adaptations to the cylindrical projection
 The monocular 3D object detector outputs the 3D bounding boxes which correspond to a virtual 3D scene which would create the image if it were captured by a pinhole camera. It predicts a 3D bounding box of a virtual object at location \$\\left[\\widetilde{X}, \\widetilde{Y}, \\widetilde{Z}\\right]\$, and we know this vector corresponds to the cylindrical coordinates of the real object:
 \$\$\\left[\\begin{matrix}\\widetilde{X}\\\\\\widetilde{Y}\\\\\\widetilde{Z}\\\\\\end{matrix}\\right]=\\left[\\begin{matrix}\\rho\\varphi\\\\Y\\\\\\rho\\\\\\end{matrix}\\right]=\\left[\\begin{matrix}\\sqrt{X^2+Z^2}\\text{atan2}{\\left(X,Z\\right)}\\\\Y\\\\\\sqrt{X^2+Z^2}\\\\\\end{matrix}\\right]\$\$
 The location of the real 3D bounding box in Cartesian coordinates is
-\$\$\\left[\\begin{matrix}X\\\\Y\\\\Z\\\\\\end{matrix}\\right]=\\left[\\begin{matrix}\\rho\\sin{\\varphi}\\\\\\widetilde{Y}\\\\\\rho\\cos{\\varphi}\\\\\\end{matrix}\\right]=\\left[\\begin{matrix}\\widetilde{Z}\\sin{\\left(\\widetilde{X}/\\widetilde{Z}\\right)}\\\\\\widetilde{Y}\\\\\\widetilde{Z}\\cos{\\left(\\widetilde{X}/\\widetilde{Z}\\right)}\\\\\\end{matrix}\\right]\$\$
+\$\$\\left[\\begin{matrix}X\\\\Y\\\\Z\\\\\\end{matrix}\\right]=\\left[\\begin{matrix}\\rho\\sin{\\varphi}\\\\\\widetilde{Y}\\\\\\rho\\cos{\\varphi}\\\\\\end{matrix}\\right]=\\left[\\begin{matrix}\\widetilde{Z}\\sin{\\left(\\widetilde{X}/\\widetilde{Z}\\right)}\\\\\\widetilde{Y}\\\\\\widetilde{Z}\\cos{\\left(\\widetilde{X}/\\widetilde{Z}\\right)}\\\\\\end{matrix}\\right].\$\$
 The azimuth and elevation of the ray pointing towards the real object are
 
 \$\$\\left[\\begin{matrix}\\varphi\\\\\\psi\\\\\\end{matrix}\\right]=
 \\left[\\begin{matrix}\\text{atan}{\\left(X/Z\\right)}\\\\\\text{atan}{\\left(Y/Z\\right)}\\\\\\end{matrix}\\right]=
 \\left[\\begin{matrix}\\text{atan}{\\left(\\tan{\\left(\\widetilde{X}/\\widetilde{Z}\\right)}\\right)}\\\\\\text{atan}{\\left(\\widetilde{Y}/\\left(\\widetilde{Z}\\cos{\\left(\\widetilde{X}/\\widetilde{Z}\\right)}\\right)\\right)}\\\\\\end{matrix}\\right]=
-\\left[\\begin{matrix}\\tan{\\widetilde{\\varphi}}\\\\\\text{atan}{\\left(\\tan{\\widetilde{\\psi}}/\\cos{\\left(\\tan{\\widetilde{\\varphi}}\\right)}\\right)}\\\\\\end{matrix}\\right]\$\$
+\\left[\\begin{matrix}\\tan{\\widetilde{\\varphi}}\\\\\\text{atan}{\\left(\\tan{\\widetilde{\\psi}}/\\cos{\\left(\\tan{\\widetilde{\\varphi}}\\right)}\\right)}\\\\\\end{matrix}\\right].\$\$
 
 Thus, to recover the 3D bounding box of an object in a cylindrical image using a monocular 3D object detector that was designed for perspective images and trained only on perspective images, all we have to do is apply these transformations to the output as a post-processing step.
 
 The global yaw \$\\beta\$ is related to the local yaw \$\\beta_{local}\$ (the angle which the CNN predicts) by
-\$\$\\beta=\\beta_{local}+\\varphi=\\beta_{local}+\\tan{\\widetilde{\\varphi}}\$\$
+\$\$\\beta=\\beta_{local}+\\varphi=\\beta_{local}+\\tan{\\widetilde{\\varphi}}.\$\$
 The following figure illustrates the relationship between the virtual object and the real object:
 
 ![](img/Virtual.png)
@@ -455,19 +455,19 @@ How do we find this extrinsic matrix? Often we have the calibrated transformatio
 Fisheye cameras are often used for surround view, and a popular choice is to install four cameras facing different directions: front, back, left and right. We would like the optical axis of the cylinder to be parallel to the ground, but in the same viewing direction as the camera. After rotating the cylinder according to the transformation from tilted fisheye camera to upright vehicle, we should rotate it around the new \$y\$ axis (perpendicular to the ground) by some azimuth angle. We shall now find that angle.
 
 We write the rotation matrix from the upright coordinate frame to the rotated camera explicitly as
-\$\$R=\\left[\\begin{matrix}R_{00}&R_{01}&R_{02}\\\\R_{10}&R_{11}&R_{12}\\\\R_{20}&R_{21}&R_{22}\\\\\\end{matrix}\\right]\$\$
-In upright coordinates, the optical axis of the tilted camera is:
-\$\$r=\\left[\\begin{matrix}R_{00}&R_{01}&R_{02}\\\\R_{10}&R_{11}&R_{12}\\\\R_{20}&R_{21}&R_{22}\\\\\\end{matrix}\\right]\\left[\\begin{matrix}0\\\\0\\\\1\\\\\\end{matrix}\\right]=\\left[\\begin{matrix}R_{02}\\\\R_{12}\\\\R_{22}\\\\\\end{matrix}\\right]\$\$
+\$\$R=\\left[\\begin{matrix}R_{00}&R_{01}&R_{02}\\\\R_{10}&R_{11}&R_{12}\\\\R_{20}&R_{21}&R_{22}\\\\\\end{matrix}\\right].\$\$
+In upright coordinates, the optical axis of the tilted camera is
+\$\$r=\\left[\\begin{matrix}R_{00}&R_{01}&R_{02}\\\\R_{10}&R_{11}&R_{12}\\\\R_{20}&R_{21}&R_{22}\\\\\\end{matrix}\\right]\\left[\\begin{matrix}0\\\\0\\\\1\\\\\\end{matrix}\\right]=\\left[\\begin{matrix}R_{02}\\\\R_{12}\\\\R_{22}\\\\\\end{matrix}\\right].\$\$
 By removing the y component, we get a vector pointing in the azimuthal direction of the camera, but parallel to the ground:
 \$\$r_\\bot=\\left[\\begin{matrix}R_{02}\\\\0\\\\R_{22}\\\\\\end{matrix}\\right]\$\$
 
 ![](img/axes.png)
 
 The angle between this vector and the optical axis of the upright cylinder is
-\$\$\\phi = \\text{acos} \\left(\\frac{1}{\\Vert \\begin{matrix} R_{02}&&0&&R_{22} \\end{matrix} \\Vert} \\left[\\begin{matrix}0&&0&&1\\end{matrix}\\right] \\left[\\begin{matrix}R_{02}\\\\0\\\\R_{22}\\end{matrix}\\right] \\right) = \\text{acos}\\left(\\frac{R_{22}}{\\sqrt{R_{02}^2+R_{22}^2}}\\right)\$\$
+\$\$\\phi = \\text{acos} \\left(\\frac{1}{\\Vert \\begin{matrix} R_{02}&&0&&R_{22} \\end{matrix} \\Vert} \\left[\\begin{matrix}0&&0&&1\\end{matrix}\\right] \\left[\\begin{matrix}R_{02}\\\\0\\\\R_{22}\\end{matrix}\\right] \\right) = \\text{acos}\\left(\\frac{R_{22}}{\\sqrt{R_{02}^2+R_{22}^2}}\\right).\$\$
 
-The extrinsic rotation matrix we should use is:
-\$\$R_{\\tau} = RR_y\\left(-\\phi\\right)=\\left[\\begin{matrix}R_{00}&R_{01}&R_{02}\\\\R_{10}&R_{11}&R_{12}\\\\R_{20}&R_{21}&R_{22}\\\\\\end{matrix}\\right]\\left[\\begin{matrix}\\cos{\\phi}&0&-\\sin{\\phi}\\\\0&1&0\\\\\\sin{\\phi}&0&\\cos{\\phi}\\\\\\end{matrix}\\right]\$\$
+The extrinsic rotation matrix we should use is
+\$\$R_{\\tau} = RR_y\\left(-\\phi\\right)=\\left[\\begin{matrix}R_{00}&R_{01}&R_{02}\\\\R_{10}&R_{11}&R_{12}\\\\R_{20}&R_{21}&R_{22}\\\\\\end{matrix}\\right]\\left[\\begin{matrix}\\cos{\\phi}&0&-\\sin{\\phi}\\\\0&1&0\\\\\\sin{\\phi}&0&\\cos{\\phi}\\\\\\end{matrix}\\right].\$\$
 
 Applying this extrinsic rotation produces the following cylindrical image:
 
@@ -476,18 +476,18 @@ Applying this extrinsic rotation produces the following cylindrical image:
 This cylindrical image simulates an upright view, but the top part of it is empty. We should update the principal point to simulate a vertical shift of the image.
 
 How do we find an appropriate principal point? When there was no tilt, the principal point we chose was 
-\$\$\\left[u_0, v_0\\right]=\\left[\\frac{w}{2}, \\frac{h}{2}\\right]=\\left[f\\Phi/2, f\\tan\\left(\\Psi/2\\right)\\right]\$\$
+\$\$\\left[u_0, v_0\\right]=\\left[\\frac{w}{2}, \\frac{h}{2}\\right]=\\left[f\\Phi/2, f\\tan\\left(\\Psi/2\\right)\\right].\$\$
 
 For an elevation angle of the tilt \$\\tau\$ we would like
 
-\$\$v_0=f\\tan{\\left(\\frac{\\Psi}{2}-\\tau\\right)}\$\$
+\$\$v_0=f\\tan{\\left(\\frac{\\Psi}{2}-\\tau\\right)}.\$\$
 
 The tilt angle \$\\tau\$ is the angle between \$r\$, the optical axis of the tilted camera in the upright coordinate frame, and \$r_\\bot\$, the vector parallel to the ground which we computed previously.
 
-\$\$\\tau = \\text{acos} \\left(\\frac{1}{\\Vert \\begin{matrix} R_{02}&&0&&R_{22} \\end{matrix} \\Vert} \\left[\\begin{matrix}R_{02}&&0&&R_{22}\\end{matrix}\\right] \\left[\\begin{matrix}R_{02}\\\\R_{12}\\\\R_{22}\\end{matrix}\\right] \\right) = \\text{acos}\\left(\\sqrt{R_{02}^2+R_{22}^2}\\right)\$\$
+\$\$\\tau = \\text{acos} \\left(\\frac{1}{\\Vert \\begin{matrix} R_{02}&&0&&R_{22} \\end{matrix} \\Vert} \\left[\\begin{matrix}R_{02}&&0&&R_{22}\\end{matrix}\\right] \\left[\\begin{matrix}R_{02}\\\\R_{12}\\\\R_{22}\\end{matrix}\\right] \\right) = \\text{acos}\\left(\\sqrt{R_{02}^2+R_{22}^2}\\right).\$\$
 
 The new principal point is
-\$\$\\left[u_0, v_0\\right]=\\left[f\\frac{\\Phi}{2}, f\\tan\\left(\\frac{\\Psi}{2}-\\text{acos}\\left(\\sqrt{R_{02}^2+R_{22}^2}\\right)\\right)\\right]\$\$
+\$\$\\left[u_0, v_0\\right]=\\left[f\\frac{\\Phi}{2}, f\\tan\\left(\\frac{\\Psi}{2}-\\text{acos}\\left(\\sqrt{R_{02}^2+R_{22}^2}\\right)\\right)\\right].\$\$
 
 Warping the fisheye image to a cylindrical image with this updated principal point produces the following image:
 
