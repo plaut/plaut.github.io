@@ -343,7 +343,7 @@ In perspective images, there is a translation invariant magnification equal to \
 Is there a translation invariant magnification in cylindrical images?
 
 If the object is not too large and not too close to the camera, then its width is approximately the length of an arc:
-\$\$\\Delta X=\\rho\\sin{\\Delta\\varphi}\\approx\\rho\\Delta\\varphi\$\$
+\$\$\\Delta X=2\\rho\\sin{\\left(\\frac{\\Delta\\varphi}{2}\\right)}\\approx\\rho\\Delta\\varphi\$\$
 Using this approximation,
 \$\$\\Delta u = f_\\varphi \\Delta \\varphi \\approx \\frac{f_\\varphi}{\\rho}\\Delta X\.$\$
 In the vertical direction we need not use any approximation,
